@@ -66,12 +66,22 @@ app.use(bodyParser.json());                 		//this lets Express handle POST da
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
+var router = express.Router();
+
+var userModule = require("./api/userModule.js");
+var gameModule = require("./api/gameModule.js");
+
+//middleware to use for all requests...
+router.use(function (req, res, next) {
+    utils.logMe("Middleware layer entered...") ;
+    next();             //move on...
+});
 
 /*=====================================Routing and APIs=====================================*/
 
 //default route
 app.get("/", function (req, res) {
-    res.redirect('/src/app/index.html');
+    res.redirect('/src/index.html');
 });
 
 //return the next match(es) information
@@ -319,6 +329,18 @@ app.get("/api/getScore", function (req, res) {
         return;
     })
 });
+
+//get points for user
+app.get("/api/getUserPoints", function (req, res) {
+    userModule.getUserPoints(req, res, Users);
+});
+
+//get leaderboard scores, sorted by points
+app.get("/api/getLeaderboardScores", function (req, res) {
+    gameModule.getScoreBoard(req, res, Users);
+});
+
+
 
 //try to login and get user info API
 app.post("/api/login", function (req, res) {

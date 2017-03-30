@@ -19,22 +19,22 @@ body {
 }
 
 .navbar-custom {
-    background-color:#394245;
-    color:#000000;
+    background-color:#1a398a;
+    color:#edfaf9;
     border-radius:0;
 }
 
 .navbar-brand {
-    color:#000000 !important;       /* color of logo text*/
+    color:#edfaf9  !important;       /* color of logo text*/
 }
 
 .navbar-default {
-  background-color:#FFFFFF;
+  background-color:#1f1f8a;
   background-image: none;
   background-repeat: no-repeat;
  }
 
-body { background-color:#728085  !important; }
+body { background-color:#1a398a  !important; }
 
 .myGrid {
 /*    width: 350px;

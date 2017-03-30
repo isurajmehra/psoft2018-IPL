@@ -1,0 +1,5 @@
+/node_modules/
+/.idea/
+/src/node_modules/
+/api/dbconfig.js
+/api/smtpconfig.js

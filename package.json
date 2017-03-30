@@ -1,0 +1,36 @@
+{
+  "name": "psoft2_euro",
+  "version": "2.1.0",
+  "description": "NWA Fantasy app modified for EURO 2016",
+  "main": "psoft21.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/grv2k8/Psoft2-EURO.git"
+  },
+  "keywords": [
+    "nana",
+    "nofapp",
+    "psoft21",
+    "grv"
+  ],
+  "author": "Gaurav R Joshi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/grv2k8/Psoft2-EURO/issues"
+  },
+  "homepage": "https://github.com/grv2k8/Psoft2-EURO#readme",
+  "dependencies": {
+    "body-parser": "^1.15.1",
+    "express": "^4.13.4",
+    "moment": "^2.13.0",
+    "moment-timezone": "^0.5.4",
+    "morgan": "^1.7.0",
+    "mysql": "^2.10.2",
+    "nodemailer": "^2.4.2",
+    "sequelize": "^3.23.2",
+    "serve-favicon": "^2.3.0"
+  }
+}

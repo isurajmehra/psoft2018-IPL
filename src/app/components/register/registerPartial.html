@@ -1,0 +1,42 @@
+<div class="container">
+	<h1 class="well">Register new account</h1>
+	<div class="col-lg-12 well">
+        <div class="alert alert-success" ng-show="show_confirmation">
+            <span>Thank you for registering. Your account has been created.</span>
+            <p><a href="index.html#/login">Log in</a></p>
+        </div>
+        <div class="alert alert-danger" ng-hide="user_added">
+            <span>The user account was not created. DETAILS: {{err_msg}}</span>
+        </div>
+		<div class="row" ng-hide="show_confirmation">
+			<form name="registerForm" ng-submit="registerUser()" novalidate>
+				<div class="col-lg-6 col-lg-offset-4">
+					<div class="row">
+						<div class="col-sm-6 form-group" ng-class="{ 'has-error' : registerForm.name.$invalid && !registerForm.name.$pristine }">
+							<input type="text" name="name" class="form-control" ng-model="user.name" placeholder="Enter Name..." required>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-sm-6 form-group" ng-class="{ 'has-error' : registerForm.email.$invalid && !registerForm.email.$pristine }">
+							<!--<label>Email address</label>-->
+							<input type="email" name="email" class="form-control" ng-model="user.email" placeholder="Enter Email address..." required>
+						    <p ng-show="registerForm.email.$invalid && !registerForm.email.$pristine" class="help-block">Please enter a valid email address.</p>
+                        </div>
+					</div>
+					<div class="row">
+						<div class="col-sm-6 form-group">
+							<!--<label>Password:</label>-->
+							<input type="password" name="password" class="form-control" ng-model="user.password" placeholder="Password" required>
+                            <input type="password" name="confirm_password" class="form-control" ng-model="user.confirm_password" placeholder="Confirm Password" required>
+						    <p class="label label-danger" ng-show="!is_pass_match">The passwords do not match</p>
+                        </div>
+					</div>
+					<br>
+					<div class="row col-sm-4">
+						<button class="btn btn-lg btn-primary btn-block" type="submit" ng-disabled="registerForm.$invalid || is_processing">Register<span ng-show="is_processing"><img src="/assets/img/loading.gif"></span></button>	
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>

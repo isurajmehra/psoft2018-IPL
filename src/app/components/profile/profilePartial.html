@@ -1,0 +1,38 @@
+<div class="container">
+	  	<div class="psoft2-compiled">
+	  		<div class="well">
+ 				<div class="page-header text-success">
+ 					<h1>{{name}} ({{points}} points)</h1>
+ 				</div>
+	  			<div ng-show="!gameHistory.length" class="row text-center">Fetching...<img src="/assets/img/loading.gif" /></div>
+ 				<div ng-show="gameHistory.length" class="row text-left">
+	  				<table class="table table-striped">
+	  					<thead class="text-primary">
+	  						<tr class="text-center">
+	  							<th>#</th>
+	  							<th>Match Date</th>
+	  							<th>Team 1</th>
+	  							<th>Team 2</th>
+	  							<th>Predicted team</th>
+	  							<th>Winner</th>
+	  							<!--<th>Result</th>-->
+	  							<th>Points</th>
+	  						</tr>
+	  					</thead>
+	  					<tbody>
+	  						<tr class="text-left" ng-repeat="x in gameHistory">
+	  							<td>{{$index+1}}</td>
+	  							<td>{{x.matchDate | date:'MM-dd-yyyy'}}</td>
+	  							<td>{{x.team1Name}}</td>
+	  							<td>{{x.team2Name}}</td>
+	  							<td>{{x.predictedTeam}}</td>
+	  							<td>{{x.winningTeam}}</td>
+	  							<!--<td>{{x.result}}</td>-->
+	  							<!--<td>{{getDisplayPoints(x.result)}}</td>-->
+								<td>{{x.points}}</td>
+	  						</tr>
+	  					</tbody>
+	  				</table>				  					
+	  			</div>		  		
+	  		</div>
+	  	</div>

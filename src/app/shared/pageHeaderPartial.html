@@ -1,0 +1,19 @@
+  <nav class='navbar navbar-default navbar-fixed-top'>
+	<div class='container'>
+		<div class='navbar-header'>
+			<a class='pull-left'> <img src='/src/assets/img/EURO_logo.png'/></a>
+			<a class='navbar-brand' href='/src/index.html#/poll'>PredictSoft v2.10 - Euro Cup 2016</a>
+		</div>
+		<div id='navbar' class='collapse navbar-collapse'>
+            <ul class='nav navbar-nav pull-right' ng-show='checkIfLoggedIn()'>
+                <li>
+                    <a class='navbar-brand' style='font-size:14px;' href='/src/index.html#/profile'>Hello,{{getUserName()}} <span class='badge' style='background-color: #2aabd2; color: #000000'>{{getUserPoints()}} pts</span> </a>
+                </li>
+                <li class='navbar-brand'> | </li>
+                <li><a class="navbar-brand" style='font-size:14px;' href='/src/index.html#/rules'>Rules</a></li>
+                <li class='navbar-brand'> | </li>
+                <li><a class='navbar-brand' style='font-size:14px;' href='javascript:;' ng-click='logout()'>Log Out</a></li>
+            </ul>
+		</div>
+	</div>  		
+  </nav>

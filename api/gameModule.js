@@ -18,10 +18,14 @@ exports.getScoreBoard = function(req,res,userModel) {
         order: 'points DESC'
     })
         .then(function (scores) {
+            //console.log(JSON.stringify(scores));
             resObj.success = true;
-
             for (var n = 0; n < scores.length; n++) {
-                //console.log(JSON.stringify(scores));
+
+                //purge [admin] entry from board
+                if(scores[n].name == "[admin]")
+                    continue;
+
                 resObj.scoreData.push({
                     uid: scores[n].userID,
                     Name: scores[n].name,

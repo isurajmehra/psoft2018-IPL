@@ -404,7 +404,7 @@ app.get("/api/checkIfPredicted", function (req, res) {
 })
 
 //get user's game history
-app.get("/api/getHistory", function (req, res) {
+app.get("/api/getHistoryOLDIPL", function (req, res) {
     var resObj = {
         count: 0,
         historyData: [],
@@ -415,7 +415,19 @@ app.get("/api/getHistory", function (req, res) {
     var playerToken = req.query.token;
     
     sqlConn.query(
-        "SELECT m.MatchDate as match_date,(SELECT teams.Name FROM teams WHERE teams.teamID = m.Team1ID) as team1,(SELECT teams.Name FROM teams WHERE teams.teamID = m.Team2ID) as team2,(SELECT teams.Name FROM teams WHERE teams.teamID = p.predictedTeamID) as predicted_team,(SELECT teams.Name FROM teams WHERE teams.teamID = m.WinningTeamID) as winning_team FROM prediction p, users u, teams t, `match` m where p.playerID = (SELECT userID FROM users WHERE auth_key = '" + playerToken + "' ) and u.userid = p.playerID and t.teamID = p.predictedTeamID and m.matchID = p.matchID and m.isActive=0",
+        "SELECT" +
+        " m.MatchDate as match_date," +
+        "(SELECT teams.Name FROM teams WHERE teams.teamID = m.Team1ID) as team1," +
+        "(SELECT teams.Name FROM teams WHERE teams.teamID = m.Team2ID) as team2," +
+        "(SELECT teams.Name FROM teams WHERE teams.teamID = p.predictedTeamID) as predicted_team," +
+        "(SELECT teams.Name FROM teams WHERE teams.teamID = m.WinningTeamID) as winning_team " +
+        "FROM prediction p, users u, teams t, `match` m " +
+        "WHERE " +
+        "p.playerID = (SELECT userID FROM users WHERE auth_key = '" + playerToken + "' ) " +
+        "AND u.userid = p.playerID " +
+        "AND t.teamID = p.predictedTeamID " +
+        "AND m.matchID = p.matchID " +
+        "AND m.isActive=0",
   { type: sqlConn.QueryTypes.SELECT })
     .then(function (matches) {
         
@@ -450,6 +462,143 @@ app.get("/api/getHistory", function (req, res) {
         res.end();
         return;
     })
+})
+
+//get user's game history
+app.get("/api/getHistory", function (req, res) {
+    var resObj = {
+        count: 0,
+        historyData: [],
+        message: "",
+        success: false
+    };
+
+    var playerToken = req.query.token;
+    var historyQuery = "SELECT " +
+        "m.MatchDate as match_date," +
+        "m.matchPoints as game_weight, " +
+        "(SELECT teams.Name FROM teams WHERE teams.teamID = m.Team1ID) as team1," +
+        "(SELECT teams.Name FROM teams WHERE teams.teamID = m.Team2ID) as team2," +
+        "(SELECT teams.Name FROM teams WHERE teams.teamID = p.predictedTeamID) as predicted_team," +
+        "(SELECT teams.Name FROM teams WHERE teams.teamID = m.WinningTeamID) as winning_team " +
+        "FROM " +
+        "prediction p, users u, teams t, `match` m " +
+        "WHERE " +
+        "p.playerID = (SELECT userID FROM users WHERE auth_key = '" + playerToken + "' ) AND " +
+        "u.userid = p.playerID AND " +
+        "t.teamID = p.predictedTeamID AND " +
+        "m.matchID = p.matchID AND " +
+        "m.isActive=0";
+
+    //console.log(query);
+
+    sqlConn.query(historyQuery, {type: sqlConn.QueryTypes.SELECT})
+        .then(function (matches) {
+
+            //fill response object and return
+            resObj.success = true;
+            resObj.count = matches.length;
+
+            for (var n = 0; n < matches.length; n++) {
+                var outcome = (matches[n].predicted_team == null) ? "[TBD]" : ((matches[n].predicted_team == matches[n].winning_team) ? "WIN" : "LOSS");
+
+                resObj.historyData.push({
+                    team1Name: matches[n].team1,
+                    team2Name: matches[n].team2,
+                    matchDate: matches[n].match_date,
+                    predictedTeam: matches[n].predicted_team,
+                    winningTeam: matches[n].winning_team,
+                    points: (matches[n].predicted_team === matches[n].winning_team) ? (matches[n].game_weight) : 0,
+                    result: outcome
+                });
+            }
+            console.log("\n&&&&&USER_HISTORY::\n"+JSON.stringify(resObj)+"\n&&&&&&&&&\n");
+            res.json(resObj);
+            res.end();
+            return;
+        })
+        .catch(function (err) {
+            //match find failed. Reply with message
+            utils.logMe("Error trying to fetch user match history. Details:\n" + err);
+            resObj.success = false;
+            resObj.message = err;
+
+            res.json(resObj);
+            res.end();
+            return;
+        })
+});
+
+//get game history of user with req.query.userID
+app.get("/api/getHistoryByID", function (req, res) {
+    var resObj = {
+        count: 0,
+        userData: {},
+        historyData: [],
+        message: "",
+        success: false
+    };
+
+    var playerID = req.query.userID;
+    var historyIDQuery =
+        "SELECT " +
+        "u.name as player_name, " +
+        "u.points as player_points, " +
+        "m.MatchDate AS match_date," +
+        "m.matchPoints AS game_weight," +
+        "(SELECT teams.Name FROM teams WHERE teams.teamID = m.Team1ID) AS team1," +
+        "(SELECT teams.Name FROM teams WHERE teams.teamID = m.Team2ID) AS team2," +
+        "(SELECT teams.Name FROM teams WHERE teams.teamID = p.predictedTeamID) AS predicted_team," +
+        "(SELECT teams.Name FROM teams WHERE teams.teamID = m.WinningTeamID) AS winning_team " +
+        "FROM prediction p,users u,teams t,`match` m " +
+        "WHERE " +
+        "p.playerID = " + playerID + " AND " +
+        "u.userid = p.playerID AND " +
+        "teamID = p.predictedTeamID AND " +
+        "m.matchID = p.matchID AND " +
+        "m.isActive=0 AND m.isLocked=1 AND m.isHidden=0";
+
+    //console.log(historyIDQuery);
+    sqlConn.query(historyIDQuery, {type: sqlConn.QueryTypes.SELECT})
+        .then(function (matches) {
+
+            console.log(JSON.stringify(matches));
+            //fill response object and return
+            resObj.success = true;
+            resObj.count = matches.length;
+
+
+            resObj.userData['name'] = matches[0].player_name;
+            resObj.userData['points'] = matches[0].player_points;
+
+            for (var n = 0; n < matches.length; n++) {
+                var outcome = (matches[n].predicted_team == null) ? "[TBD]" : ((matches[n].predicted_team == matches[n].winning_team) ? "WIN" : "LOSS");
+
+                resObj.historyData.push({
+                    team1Name: matches[n].team1,
+                    team2Name: matches[n].team2,
+                    matchDate: matches[n].match_date,
+                    predictedTeam: matches[n].predicted_team,
+                    winningTeam: matches[n].winning_team,
+                    points: (matches[n].predicted_team === matches[n].winning_team) ? (matches[n].game_weight) : 0,
+                    result: outcome
+                });
+            }
+            console.log("\n&&&&&USER_HISTORY::\n"+JSON.stringify(resObj)+"\n&&&&&&&&&\n");
+            res.json(resObj);
+            res.end();
+        })
+        .catch(function (err) {
+            //match find failed. Reply with message
+            utils.logMe("Error trying to fetch user match history. Details:\n" + err);
+            resObj.success = false;
+            resObj.message = err;
+
+            res.json(resObj);
+            res.end();
+        })
+
+
 })
 
 //get score for user

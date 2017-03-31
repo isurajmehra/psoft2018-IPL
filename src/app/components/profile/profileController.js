@@ -48,7 +48,7 @@
                     if (response.data.historyData.length == 0) {
                         //show empty grid
                         $scope.gameHistory = [];
-                        throw "History array is null!";
+                        //throw "History array is null!";
                     }
                     else {
                         $scope.gameHistory = response.data.historyData.slice();
@@ -58,7 +58,7 @@
                     }
                 })
                 .catch(function (err) {
-                    console.log("Unable to fetch user prediction history for userID " + userID + " . Details:\n" + err)
+                    console.log("Unable to fetch user prediction history for userID " + userID + " . Details:\n" + JSON.stringify(err));
                 })
         };
 

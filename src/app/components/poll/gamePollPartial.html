@@ -21,9 +21,10 @@
                         <div class="alert alert-info col-sm-3 col-md-offset-5" style="padding-left: 22px;" ng-show="loadingGames">Loading games...<img src="/assets/img/loading.gif"></div>
                         <div class="row" ng-show="predErr" style="padding-left: 38px; padding-top: 10px; padding-bottom: 20px"><span class="label label-danger">Please make a selection for available games</span></div>
                         <!--Game list and voting buttons-->
-                        <div class="row h3 text-center">Games for {{games[0].date | date:'MMM d, yyyy'}}</div>
-                        <div class="row h5 text-center">(<span class="h4"><strong>{{games[0].points}}</strong></span> points<span ng-show="games.length > 1"> each</span>)</div>
-                        <div class="row" ng-repeat="x in games">
+                        <div  ng-hide="nogames">
+                            <div class="row h3 text-center">Games for {{games[0].date | date:'MMM d, yyyy'}}</div>
+                            <div class="row h5 text-center">(<span class="h4"><strong>{{games[0].points}}</strong></span> points<span ng-show="games.length > 1"> each</span>)</div>
+                            <div class="row" ng-repeat="x in games">
 
                             <div class="row">
                                 <div class="text-center h5 ">
@@ -61,6 +62,7 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
                         </div>
                         <div ng-show="nogames" style="padding-bottom: 40px;" class="col-sm-8 col-md-offset-3">
                             <span >There are currently no active games available</span>

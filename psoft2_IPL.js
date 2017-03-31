@@ -99,6 +99,7 @@ app.get("/api/nextmatch", function (req, res) {
         "SELECT team1.teamID as t1ID,team1.name as t1Name, team1.logoURL as t1logoURL, " +
         "team2.teamID as t2ID,team2.name as t2Name, team2.logoURL as t2logoURL, " +
         "match.matchID as matchID, " +
+        "match.matchPoints as points, " +
         "match.isLocked as locked, " +
         "match.MatchDate as date " +
         "FROM " +
@@ -118,6 +119,7 @@ app.get("/api/nextmatch", function (req, res) {
 
                 resObj.matchData.push({
                     matchID: matches[n].matchID,
+                    points: matches[n].points,
                     team1ID: matches[n].t1ID,
                     team1Name: matches[n].t1Name,
                     team1LogoPath: matches[n].t1logoURL,

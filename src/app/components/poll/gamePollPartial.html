@@ -4,10 +4,10 @@
                 <!--Teams and poll button DIVs-->
                 <div class="col-sm-12">
                     <!-- Poll and Prediction column-->
-                    <div class="text-center">
+                    <!--<div class="text-center">
                         <div class="h1">Upcoming games</div>
-                        <!--<div class="h4">(FINALS)</div>-->
-                    </div>
+                        <div class="h4">(FINALS)</div>
+                    </div>-->
                     <div ng-if="showDateRemaining(matchDateTime)" class="alert alert-warning fade in" ng-show="display_announcement">
                          <span class="pull">{{msg_announcement}}<a class="close" data-dismiss="alert" aria-label="close">&times;</a></span>
                      </div>
@@ -19,10 +19,10 @@
                     </div>
                     <div class="col-md-12">
                         <div class="alert alert-info col-sm-3 col-md-offset-5" style="padding-left: 22px;" ng-show="loadingGames">Loading games...<img src="/assets/img/loading.gif"></div>
-                        <div class="row" style="padding-left: 38px; padding-top: 10px; padding-bottom: 20px"><span class="label label-danger" ng-show="predErr">Please make a selection for available games</span></div>
+                        <div class="row" ng-show="predErr" style="padding-left: 38px; padding-top: 10px; padding-bottom: 20px"><span class="label label-danger">Please make a selection for available games</span></div>
                         <!--Game list and voting buttons-->
                         <div class="row h3 text-center">Games for {{games[0].date | date:'MMM d, yyyy'}}</div>
-                        <div class="row h5 text-center">(<span class="h4"><strong>15</strong></span> points)</div>
+                        <div class="row h5 text-center">(<span class="h4"><strong>{{games[0].points}}</strong></span> points<span ng-show="games.length > 1"> each</span>)</div>
                         <div class="row" ng-repeat="x in games">
 
                             <div class="row">

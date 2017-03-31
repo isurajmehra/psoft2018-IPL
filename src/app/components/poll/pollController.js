@@ -22,7 +22,7 @@ Controller that handles
         $scope.showConfirmation = false;
 
         $scope.msg_announcement = "Predictions from other players will be revealed 15 minutes before the match";
-        $scope.display_announcement = true;            //TODO: move these to config/exports file
+        $scope.display_announcement = false;            //TODO: move these to config/exports file
 
 
         $scope.predictionGridLoaded = true;

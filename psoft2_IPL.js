@@ -19,7 +19,7 @@ var utils = require("./api/PS2Utils.js");
 //var users = require("./api/userModule.js")
 
 //define port that server will run on
-var port = 8888;
+var port = 8080;
 
 /*==========================DB definitions================================*/
 

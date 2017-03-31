@@ -512,7 +512,7 @@ app.get("/api/getHistory", function (req, res) {
                     result: outcome
                 });
             }
-            console.log("\n&&&&&USER_HISTORY::\n"+JSON.stringify(resObj)+"\n&&&&&&&&&\n");
+            //console.log("\n&&&&&USER_HISTORY::\n"+JSON.stringify(resObj)+"\n&&&&&&&&&\n");
             res.json(resObj);
             res.end();
             return;
@@ -561,8 +561,6 @@ app.get("/api/getHistoryByID", function (req, res) {
     //console.log(historyIDQuery);
     sqlConn.query(historyIDQuery, {type: sqlConn.QueryTypes.SELECT})
         .then(function (matches) {
-
-            console.log(JSON.stringify(matches));
             //fill response object and return
             resObj.success = true;
             resObj.count = matches.length;
@@ -584,7 +582,7 @@ app.get("/api/getHistoryByID", function (req, res) {
                     result: outcome
                 });
             }
-            console.log("\n&&&&&USER_HISTORY::\n"+JSON.stringify(resObj)+"\n&&&&&&&&&\n");
+            //console.log("\n&&&&&USER_HISTORY::\n"+JSON.stringify(resObj)+"\n&&&&&&&&&\n");
             res.json(resObj);
             res.end();
         })

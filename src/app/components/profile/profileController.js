@@ -24,14 +24,12 @@
                     if (response.data.historyData.length == 0) {
                         //show empty grid
                         $scope.gameHistory = [];
-                        throw "History array is null!";
                     }
                     else {
                         $scope.gameHistory = response.data.historyData.slice();
-                        $scope.name = authService.getName();
-                        $scope.points = authService.getPoints();
-                        //console.log("DONE LOADING>..");
                     }
+                    $scope.name = authService.getName();
+                    $scope.points = authService.getPoints();
                 })
                 .catch(function (err) {
                     console.log("Unable to fetch user prediction history. Details:\n" + err)

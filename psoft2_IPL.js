@@ -131,7 +131,7 @@ app.get("/api/nextmatch", function (req, res) {
                 });
             }
 
-            console.log(JSON.stringify(resObj.matchData));
+            //console.log(JSON.stringify(resObj.matchData));
         })
         .then(function () {
             //also get remaining number of predictions

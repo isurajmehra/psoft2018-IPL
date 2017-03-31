@@ -48,8 +48,10 @@ angular.module("psoft2UI").factory('authService', function ($http){
     };
 
     usrObj.getName = function(){
-        if(this.usrObj)
-            return this.usrObj.name;
+        if(this.usrObj) {
+            //console.log(this.usrObj);
+            return this.usrObj.user;
+        }
     };
 
     usrObj.getPoints = function(){

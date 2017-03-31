@@ -1,5 +1,8 @@
 angular.module("psoft2UI",['ngRoute','angular-md5','ui.grid','timer'])
-	.config(function($routeProvider){
+	.config(function($routeProvider,$locationProvider){
+
+	    $locationProvider.hashPrefix('');   //fixing angularjs1.6 issue (http://stackoverflow.com/a/41746140/6147137)
+
 		$routeProvider
 			.when('/poll',{
 				controller: 			'pollController',

@@ -209,16 +209,16 @@ app.get("/api/nextmatchOLDIPL", function (req, res) {
 })
 
 //list predictions for upcoming match from submitted players
-app.get("/api/getPredictions", function (req, res) {
+app.get("/api/getPredictionsOLDIPL", function (req, res) {
     var resObj = {
         predictData: [],
         message: "",
         success: false
     };
-    
+
     var query = "";
     var tokenID = req.query.token;
-    
+
     //check if match is locked, in which case only return current user's prediction
     Match.find({ where: { isActive: 1 } })
         .then(function (active_rows) {
@@ -233,17 +233,17 @@ app.get("/api/getPredictions", function (req, res) {
             //show everyone's predictions
             query = "SELECT u.name as name, (SELECT Name FROM teams WHERE teamID = p.predictedTeamID) As PredictedTeam FROM prediction p, users u WHERE p.playerID = u.userID AND p.matchID IN ( SELECT matchID FROM `match` WHERE isActive =1 AND isHidden=0)";
         }
-        
+
         sqlConn.query(query, { type: sqlConn.QueryTypes.SELECT })
             .then(function (predictions) {
             for (var n = 0; n < predictions.length; n++) {
-                
+
                 resObj.predictData.push({
                     Name: predictions[n].name,
                     Team: predictions[n].PredictedTeam
                 })
             }
-            //utils.logMe(JSON.stringify(resObj));            
+            //utils.logMe(JSON.stringify(resObj));
             resObj.success = true;
             res.json(resObj);
             res.end();
@@ -258,6 +258,79 @@ app.get("/api/getPredictions", function (req, res) {
             return;
         })
     })
+});
+
+app.get("/api/getPredictions", function (req, res) {
+    var resObj = {
+        predictData: [],
+        message: "",
+        success: false
+    };
+
+    var query = "";
+    var tokenID = req.query.token;
+
+    //check if match is locked, in which case only return current user's prediction
+    Match.find({where: {isActive: 1}})
+        .then(function (active_rows) {
+            if (active_rows == null) {
+                return;
+            }
+
+            //union query to show all predictions by player, along with other unhidden predictions
+            listPredQRY = "SELECT u.userID, u.name,(SELECT Name FROM teams WHERE teamID = p.predictedTeamID) As PredictedTeam, " +
+                "(SELECT teams.Name FROM teams WHERE teams.teamID = m.Team1ID) AS team1, " +
+                "(SELECT teams.Name FROM teams WHERE teams.teamID = m.Team2ID) AS team2 " +
+                "FROM prediction p, users u, teams t, `match` m " +
+                "WHERE p.playerID = u.userID AND u.userID = (SELECT userID from users where auth_key = '" + tokenID + "') AND " +
+                "p.matchID IN (SELECT matchID FROM `match` WHERE isActive =1) AND p.matchID = m.matchID AND " +
+                "t.teamID IN (m.Team1ID, m.Team2ID, 50) AND p.predictedTeamID = t.teamID " +
+                "UNION ALL " +
+                "SELECT u2.userID, u2.name, (SELECT Name FROM teams WHERE teamID = p2.predictedTeamID) AS PredictedTeam, " +
+                "(SELECT teams.Name FROM teams WHERE teams.teamID = m2.Team1ID) AS team1," +
+                "(SELECT teams.Name FROM teams WHERE teams.teamID = m2.Team2ID) AS team2 " +
+                "FROM prediction p2, users u2, teams t2, `match` m2 " +
+                "WHERE p2.playerID = u2.userID AND p2.matchID IN (SELECT matchID FROM `match` WHERE isActive =1 AND isHidden=0) AND " +
+                "p2.matchID = m2.matchID AND t2.teamID IN (m2.Team1ID, m2.Team2ID, 50) AND " +
+                "u2.auth_key <> '" + tokenID + "' AND p2.predictedTeamID = t2.teamID";
+
+            sqlConn.query(listPredQRY,
+                {type: sqlConn.QueryTypes.SELECT})
+                .then(function (predictions) {
+                    var team = '';
+                    for (var n = 0; n < predictions.length; n++) {
+                        //if draw has been predicted, show competing teams in brackets (so it's more descriptive for multi-game days)
+                        team = (predictions[n].PredictedTeam === "DRAW") ? "DRAW (" + predictions[n].team1 + " vs " + predictions[n].team2 + ")" : predictions[n].PredictedTeam;
+                        resObj.predictData.push({
+                            uid: predictions[n].userID,
+                            Name: predictions[n].name,
+                            Team: team
+                        })
+                    }
+                    //utils.logMe(JSON.stringify(resObj));
+                })
+                .then(function () {
+                    //also get remaining number of predictions
+                    // note the "-1" in query, which has been added to remove [admin] from player list
+                    var getRemPredsQRY = "SELECT (((SELECT COUNT(*) FROM users) - 1) - COUNT(*)) as rem_preds from prediction p, `match` m WHERE m.matchID = p.matchID AND m.isActive = 1";
+                    sqlConn.query(getRemPredsQRY,
+                        {type: sqlConn.QueryTypes.SELECT})
+                        .then(function (remPredictions) {
+                            //console.log(JSON.stringify(remPredictions,true));
+                            resObj.rem_predictions = remPredictions[0].rem_preds;
+                            resObj.success = true;
+                            res.json(resObj);
+                            res.end();
+                        })
+                })
+                .catch(function (err) {
+                    utils.logMe("Error trying to fill in prediction data. Details:\n" + err);
+                    resObj.success = false;
+                    resObj.message = err;
+                    res.json(resObj);
+                    res.end();
+                })
+        })
 });
 
 //get leaderboard scores, sorted by points

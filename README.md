@@ -34,6 +34,10 @@ This application needs the following to be installed before it can be deployed:
   nodejs psoft2_IPL.js
 ```
 
+## Rename and update the two config files in the /api directory:
+* dbconfig.js   - Handles PSoft database configuration
+* smtpconfig.js - Handles email configuration
+
 ## You're all set when you see a message similar to the following
 
 ```bash

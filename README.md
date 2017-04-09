@@ -1,4 +1,5 @@
 # PredictSoft v2.10
+(C)2016-2017 Gaurav R Joshi
 
 This is the online prediction application originally built for the Nepalese Northwest Arkansas folks. The code has been forked off of the NWA Online Fantasy App (NoFApp v1.00) which was piloted for the Twenty 20 Cricket Tournament 2016.
 
@@ -33,6 +34,10 @@ This application needs the following to be installed before it can be deployed:
 ```bash
   nodejs psoft2_IPL.js
 ```
+
+## Rename and update the two config files in the /api directory:
+* dbconfig.js   - Handles PSoft database configuration
+* smtpconfig.js - Handles email configuration
 
 ## You're all set when you see a message similar to the following
 

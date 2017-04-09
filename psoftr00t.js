@@ -54,11 +54,11 @@ var lockMatchesHourly = schedule.scheduleJob('50 * * * *', function(){
 
 
 //function to check and lock matches; runs two times, as according to IPL 2017 times (1020 hrs and 1420 hrs UTC)
-var lockMatchesIPL2017 = schedule.scheduledJob('20 10 * * *',function(){
+var lockMatchesIPL2017 = schedule.scheduleJob('20 10 * * *',function(){
    console.log("I should check and log a match at " + utils.getNow());
 });
 
-var lockMatchesIPL2017 = schedule.scheduledJob('20 14 * * *',function(){
+var lockMatchesIPL2017 = schedule.scheduleJob('20 14 * * *',function(){
     console.log("I should check and log a match at " + utils.getNow());
 });
 

@@ -75,8 +75,8 @@ var sendEmail = function(to,title,mbody){
     var smtpConfig = {
         service: 'gmail',
         auth: {
-            user: 'predictsoft@gmail.com',
-            pass: 'J<3mBS0q'
+            user: emailConfig.auth.user,
+            pass: emailConfig.auth.pass
         }
     }
 

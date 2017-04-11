@@ -53,7 +53,7 @@ var lockMatchesHourly = schedule.scheduleJob('50 * * * *', function(){
 });
 
 //function to check and lock matches; runs two times, as according to IPL 2017 times (1020 hrs and 1420 hrs UTC/server times are in EST)
-var lockFirstMatchIPL2017 = schedule.scheduleJob('45 20 * * *',function(){      //6:25 am EST
+var lockFirstMatchIPL2017 = schedule.scheduleJob('25 6 * * *',function(){      //6:25 am EST
 
     lockMatch(lock_threshold)
         .then(function (sp_response) {

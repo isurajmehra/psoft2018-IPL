@@ -43,15 +43,25 @@ var sqlConn = new Sequelize(
     });
 
 
-/*========================== SCHEDULER =====================================*/
+/* ========================== MIDDLEWARE LAYER =============================*/
 
-//function to lock matches based on match schedule. Runs on the 50th minute of every hour, checking to see if there's a
-// match scheduled in the next 10 minutes, and then locks it
+app.use(bodyParser.json());                 		//this lets Express handle POST data
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(__dirname));
 
-var lockMatchesHourly = schedule.scheduleJob('50 * * * *', function(){
-    console.log('Scheduled log testing at '+utils.getNow());
+
+var router = express.Router();
+
+//middleware to use for all requests...
+router.use(function (req, res, next) {
+    if(req.body){
+        utils.logMe("Middleware layer entered with ",req.body) ;
+    }
+    next();             //move on...
 });
 
+
+/*========================== SCHEDULER =====================================*/
 //function to check and lock matches; runs two times, as according to IPL 2017 times (1020 hrs and 1420 hrs UTC/server times are in EST)
 var lockFirstMatchIPL2017 = schedule.scheduleJob('25 6 * * *',function(){      //6:25 am EST
 
@@ -81,6 +91,8 @@ var lockSecondMatchIPL2017 = schedule.scheduleJob('25 10 * * *',function(){     
         });
 });
 
+/*=========================== ADMIN API FUNCTIONS ==========================*/
+
 app.post("/api/lockNextMatch",function (req, res) {
 
     lockMatch(lock_threshold)
@@ -95,6 +107,82 @@ app.post("/api/lockNextMatch",function (req, res) {
             return res;
         });
 })
+
+//update scores and next day's match
+app.post("/api/adminUpdateAfterMatch",function (req,res) {
+
+    var resObj = {
+        message: "",
+        success: false
+    };
+
+    if(!req.body){
+        resObj.message= "ADMIN_UPDATE_ERROR: IMPROPERLY FORMED POST REQUEST";
+        resObj.success = false;
+        utils.logMe(resObj.message);
+        res.json(resObj);
+        res.end();
+    }
+
+    var playerToken = req.body.token;
+    var matchID = req.body.matchID;
+    var winningTeamID = req.body.winningTeamID;
+    var admin_user_name = "N/A";
+    //var scoreIncBy = req.body.scoreIncBy;
+
+    // 1. Validate administrator access
+
+    var getr00t_query = "SELECT name, isr00t FROM users WHERE auth_key = '" + playerToken + "' AND isr00t = 1";
+    sqlConn.query(
+        getr00t_query,
+        { type: sqlConn.QueryTypes.SELECT })
+        .then(function (adminObject) {
+            if (adminObject.length <= 0) {
+                //could not validate as admin user
+                resObj.message = "ERR_ACCESS_DENIED - User with token " + playerToken + " was not found in the administrator group.";
+                resObj.success = false;
+                //utils.logMe(resObj.message);
+                //res.json(resObj);
+                //res.end();
+                throw (resObj.message);
+            }
+            admin_user_name = adminObject[0].name;
+            //utils.logMe("ADMIN_SCORE_UPDATE:: Logged in as " + admin_user_name);          //TODO: move to middleware
+            //console.log("1");
+        })
+        .then(function () {
+            //2 and 3: Call stored procedure that will:
+            //          2. Update match results in match table
+            //          3. Deactivate last match (isActive = 0)
+            //          4. Update user scores
+            var SP_update_query = "CALL update_scores('" + matchID + "','" + winningTeamID + "');";
+            sqlConn.query(SP_update_query)
+            .then(function (){
+                // 5. Activate next day's match(es)
+
+                //TODO: find and update next day's match
+                console.log("5");
+            })
+            .then(function(){
+                //6. return successful message result
+                //console.log("6");
+                var success_message = "***  { ADMIN_USER : " + admin_user_name + " } Match scores successfully updated for matchID " + matchID + " [Winning TeamID: " + winningTeamID + "]";
+                resObj.message = success_message;
+                resObj.success = true;
+                console.log(resObj.message);
+                res.json(resObj);
+                res.end();
+            })
+        })
+        .catch(function (err) {
+            resObj.message = "ERR_USER_NOT_VERIFIED:: Error trying to validate permissions for user '" + req.query.token + "'. Please check admin log for more details.";
+            resObj.success = false;
+            utils.logMe(resObj.message + " [Details: " + err + " ]");        //only log error details, don't send to post
+            res.json(resObj);
+            res.end();
+        });
+
+});
 
 app.post("/api/r00tSendAdminEmail", function (req, res) {
 
@@ -162,5 +250,5 @@ var lockMatch = function(threshold){
 
 app.listen(port);
 utils.logMe("psoftr00t started on port " + port);
-utils.logMe("Running scheduler: ",lockFirstMatchIPL2017);
-utils.logMe("Running scheduler: ",lockSecondMatchIPL2017);
+utils.logMe("Started scheduler for auto-locking 5:30 AM CST match " + lockFirstMatchIPL2017.name);
+utils.logMe("Started scheduler for auto-locking 9:30 AM CST match " + lockSecondMatchIPL2017.name);

@@ -18,8 +18,8 @@ var dbconfig = require('./api/dbconfig.js');        //load config module
 var utils = require("./api/PS2Utils.js");
 //var users = require("./api/userModule.js")
 
-//define port that psoft admin server will run on
-var port = 8090;
+var port = 8090;                //port that psoft admin server runs on
+var lock_threshold = 15;        //look-ahead time in minutes TODO: get from config file...also create config file!
 
 /*==========================DB definitions================================*/
 
@@ -52,15 +52,49 @@ var lockMatchesHourly = schedule.scheduleJob('50 * * * *', function(){
     console.log('Scheduled log testing at '+utils.getNow());
 });
 
+//function to check and lock matches; runs two times, as according to IPL 2017 times (1020 hrs and 1420 hrs UTC/server times are in EST)
+var lockFirstMatchIPL2017 = schedule.scheduleJob('45 20 * * *',function(){      //6:25 am EST
 
-//function to check and lock matches; runs two times, as according to IPL 2017 times (1020 hrs and 1420 hrs UTC)
-var lockMatchesIPL2017 = schedule.scheduleJob('20 10 * * *',function(){
-   console.log("I should check and log a match at " + utils.getNow());
+    lockMatch(lock_threshold)
+        .then(function (sp_response) {
+            var lock_done_msg = "*** Upcoming match has been locked successfully at 6:25 AM EDST by psoft scheduler.";
+            utils.logMe(lock_done_msg);
+            return;
+        })
+        .error(function(err){
+            utils.logMe("Error trying to lock match by schedule at 6:25 AM EDST. Description: ",err);
+            return;
+        });
 });
 
-var lockMatchesIPL2017 = schedule.scheduleJob('20 14 * * *',function(){
-    console.log("I should check and log a match at " + utils.getNow());
+var lockSecondMatchIPL2017 = schedule.scheduleJob('25 10 * * *',function(){     //10:25 am EST
+
+    lockMatch(lock_threshold)
+        .then(function (sp_response) {
+            var lock_done_msg = "*** Upcoming match has been locked successfully at 10:25 AM EDST by psoft scheduler.";
+            utils.logMe(lock_done_msg);
+            return;
+        })
+        .error(function(err){
+            utils.logMe("Error trying to lock match at 10:25 AM EDST. Description: ",err);
+            return;
+        });
 });
+
+app.post("/api/lockNextMatch",function (req, res) {
+
+    lockMatch(lock_threshold)
+        .then(function (sp_response) {
+            var lock_done_msg = "Match locked by API successfully (LOCK_THRESHOLD = " + lock_threshold + " minutes)";
+            utils.logMe(lock_done_msg);
+            res.json(lock_done_msg);
+            return res;
+        })
+        .error(function(err){
+            res.json("Error trying to lock match by API call. Description: ",err);
+            return res;
+        });
+})
 
 app.post("/api/r00tSendAdminEmail", function (req, res) {
 
@@ -116,9 +150,17 @@ app.post("/api/r00tSendEmail", function (req, res) {
     res.json({message: 'OK'});
 })
 
+/* private methods */
+
+var lockMatch = function(threshold){
+    utils.logMe("Running stored procedure to lock matches within the next "+threshold+" minutes...");
+    var SP_query = "CALL lock_tables('" + threshold + "');";
+    return sqlConn.query(SP_query);
+}
 
 /*app starts here....*/
 
 app.listen(port);
-
 utils.logMe("psoftr00t started on port " + port);
+utils.logMe("Running scheduler: ",lockFirstMatchIPL2017);
+utils.logMe("Running scheduler: ",lockSecondMatchIPL2017);

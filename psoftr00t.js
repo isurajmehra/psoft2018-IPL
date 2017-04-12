@@ -95,6 +95,8 @@ var lockSecondMatchIPL2017 = schedule.scheduleJob('25 10 * * *',function(){     
 
 app.post("/api/lockNextMatch",function (req, res) {
 
+    //TODO:: add authentication layer to further secure this
+
     lockMatch(lock_threshold)
         .then(function (sp_response) {
             var lock_done_msg = "Match locked by API successfully (LOCK_THRESHOLD = " + lock_threshold + " minutes)";
@@ -106,7 +108,20 @@ app.post("/api/lockNextMatch",function (req, res) {
             res.json("Error trying to lock match by API call. Description: ",err);
             return res;
         });
-})
+});
+
+app.post("/api/adminActivateNextMatch", function (req, res) {
+
+    //TODO:: add authentication layer to further secure this
+
+    activateNextMatch()
+        .then(function(){
+           var activated_msg = "Ran stored procedure to activate next day's match. Please validate in browser.";
+            utils.logMe(activated_msg);
+            res.json(activated_msg);
+            return res;
+        });
+});
 
 //update scores and next day's match
 app.post("/api/adminUpdateAfterMatch",function (req,res) {
@@ -120,6 +135,14 @@ app.post("/api/adminUpdateAfterMatch",function (req,res) {
         resObj.message= "ADMIN_UPDATE_ERROR: IMPROPERLY FORMED POST REQUEST";
         resObj.success = false;
         utils.logMe(resObj.message);
+        res.json(resObj);
+        res.end();
+    }
+
+    if(!req.body.token || !req.body.matchID || !req.body.winningTeamID)
+    {
+        resObj.message = "ADMIN_UPDATE_ERROR:: Insufficient number of parameters specified in request";
+        resObj.success = false;
         res.json(resObj);
         res.end();
     }
@@ -157,21 +180,19 @@ app.post("/api/adminUpdateAfterMatch",function (req,res) {
             //          4. Update user scores
             var SP_update_query = "CALL update_scores('" + matchID + "','" + winningTeamID + "');";
             sqlConn.query(SP_update_query)
-            .then(function (){
+                .then(function (){
                 // 5. Activate next day's match(es)
-
-                //TODO: find and update next day's match
-                console.log("5");
-            })
-            .then(function(){
-                //6. return successful message result
-                //console.log("6");
-                var success_message = "***  { ADMIN_USER : " + admin_user_name + " } Match scores successfully updated for matchID " + matchID + " [Winning TeamID: " + winningTeamID + "]";
-                resObj.message = success_message;
-                resObj.success = true;
-                console.log(resObj.message);
-                res.json(resObj);
-                res.end();
+                    activateNextMatch()
+                        .then(function(){
+                            //6. return successful message result
+                            //console.log("6");
+                            var success_message = "***  { ADMIN_USER : " + admin_user_name + " } Match scores successfully updated for matchID " + matchID + " [Winning TeamID: " + winningTeamID + "]";
+                            resObj.message = success_message;
+                            resObj.success = true;
+                            console.log(resObj.message);
+                            res.json(resObj);
+                            res.end();
+                        })
             })
         })
         .catch(function (err) {
@@ -244,6 +265,12 @@ var lockMatch = function(threshold){
     utils.logMe("Running stored procedure to lock matches within the next "+threshold+" minutes...");
     var SP_query = "CALL lock_tables('" + threshold + "');";
     return sqlConn.query(SP_query);
+};
+
+var activateNextMatch = function(){
+    utils.logMe("Running stored procedure to activate next match(es)");
+    var SP_activate_query = "CALL sp_activate_next_match();";
+    return sqlConn.query(SP_activate_query);
 }
 
 /*app starts here....*/

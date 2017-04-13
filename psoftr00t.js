@@ -21,6 +21,8 @@ var utils = require("./api/PS2Utils.js");
 var port = 8090;                //port that psoft admin server runs on
 var lock_threshold = 15;        //look-ahead time in minutes TODO: get from config file...also create config file!
 
+var admin_user_name = "N/A";    //global var to track user information  TODO: convert to JSON object if moar r00t parms need to be tracked
+
 /*==========================DB definitions================================*/
 
 var sqlConn = new Sequelize(
@@ -45,21 +47,57 @@ var sqlConn = new Sequelize(
 
 /* ========================== MIDDLEWARE LAYER =============================*/
 
-app.use(bodyParser.json());                 		//this lets Express handle POST data
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(__dirname));
-
-
 var router = express.Router();
 
 //middleware to use for all requests...
 router.use(function (req, res, next) {
-    if(req.body){
-        utils.logMe("Middleware layer entered with ",req.body) ;
+
+    if(!req.body || !req.body.token){
+        res.json("Invalid request received");
+        res.end();
+        return;
     }
-    next();             //move on...
+    //validate user
+
+    var playerToken = req.body.token;
+    var midwr_ret_object = {
+        message: "",
+        success: false
+    };
+    // 1. Validate administrator access
+
+    var getr00t_query = "SELECT name FROM users WHERE auth_key = '" + playerToken + "' AND isr00t = 1";
+    sqlConn.query(
+        getr00t_query,
+        { type: sqlConn.QueryTypes.SELECT })
+        .then(function (adminObject) {
+            if (adminObject.length <= 0) {
+                //could not validate as admin user
+                midwr_ret_object.message = "ERR_ACCESS_DENIED - User with token " + playerToken + " was not found in the administrator group.";
+                midwr_ret_object.success = false;
+                //utils.logMe(resObj.message);
+                throw (midwr_ret_object.message);
+            }
+            admin_user_name = adminObject[0].name;
+            //console.log("1");
+        }).then(function(){
+        utils.logMe("### ADMIN_AUTH:: Logged in as " + admin_user_name);
+        next();         //move on...
+    })
+    .catch(function (err) {
+        midwr_ret_object.message = "ERR_USER_NOT_VERIFIED:: Error trying to validate permissions for user '" + req.query.token + "'. See log for more details.";
+        midwr_ret_object.success = false;
+        utils.logMe(midwr_ret_object.message + " [Details: " + err + " ]");        //only log error details, don't send to post
+        res.json(midwr_ret_object);
+        res.end();
+        return;
+    });
 });
 
+app.use(bodyParser.json());                 		//this lets Express handle POST data
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(__dirname));
+app.use(router);
 
 /*========================== SCHEDULER =====================================*/
 //function to check and lock matches; runs two times, as according to IPL 2017 times (1020 hrs and 1420 hrs UTC/server times are in EST)
@@ -95,8 +133,6 @@ var lockSecondMatchIPL2017 = schedule.scheduleJob('25 10 * * *',function(){     
 
 app.post("/api/lockNextMatch",function (req, res) {
 
-    //TODO:: add authentication layer to further secure this
-
     lockMatch(lock_threshold)
         .then(function (sp_response) {
             var lock_done_msg = "Match locked by API successfully (LOCK_THRESHOLD = " + lock_threshold + " minutes)";
@@ -111,8 +147,6 @@ app.post("/api/lockNextMatch",function (req, res) {
 });
 
 app.post("/api/adminActivateNextMatch", function (req, res) {
-
-    //TODO:: add authentication layer to further secure this
 
     activateNextMatch()
         .then(function(){
@@ -139,7 +173,7 @@ app.post("/api/adminUpdateAfterMatch",function (req,res) {
         res.end();
     }
 
-    if(!req.body.token || !req.body.matchID || !req.body.winningTeamID)
+    if(!req.body.matchID || !req.body.winningTeamID)
     {
         resObj.message = "ADMIN_UPDATE_ERROR:: Insufficient number of parameters specified in request";
         resObj.success = false;
@@ -147,53 +181,27 @@ app.post("/api/adminUpdateAfterMatch",function (req,res) {
         res.end();
     }
 
-    var playerToken = req.body.token;
     var matchID = req.body.matchID;
     var winningTeamID = req.body.winningTeamID;
-    var admin_user_name = "N/A";
-    //var scoreIncBy = req.body.scoreIncBy;
 
-    // 1. Validate administrator access
+    var SP_update_query = "CALL update_scores('" + matchID + "','" + winningTeamID + "');";
 
-    var getr00t_query = "SELECT name, isr00t FROM users WHERE auth_key = '" + playerToken + "' AND isr00t = 1";
-    sqlConn.query(
-        getr00t_query,
-        { type: sqlConn.QueryTypes.SELECT })
-        .then(function (adminObject) {
-            if (adminObject.length <= 0) {
-                //could not validate as admin user
-                resObj.message = "ERR_ACCESS_DENIED - User with token " + playerToken + " was not found in the administrator group.";
-                resObj.success = false;
-                //utils.logMe(resObj.message);
-                //res.json(resObj);
-                //res.end();
-                throw (resObj.message);
-            }
-            admin_user_name = adminObject[0].name;
-            //utils.logMe("ADMIN_SCORE_UPDATE:: Logged in as " + admin_user_name);          //TODO: move to middleware
-            //console.log("1");
-        })
-        .then(function () {
-            //2 and 3: Call stored procedure that will:
-            //          2. Update match results in match table
-            //          3. Deactivate last match (isActive = 0)
-            //          4. Update user scores
-            var SP_update_query = "CALL update_scores('" + matchID + "','" + winningTeamID + "');";
-            sqlConn.query(SP_update_query)
-                .then(function (){
-                // 5. Activate next day's match(es)
-                    activateNextMatch()
-                        .then(function(){
-                            //6. return successful message result
-                            //console.log("6");
-                            var success_message = "***  { ADMIN_USER : " + admin_user_name + " } Match scores successfully updated for matchID " + matchID + " [Winning TeamID: " + winningTeamID + "]";
-                            resObj.message = success_message;
-                            resObj.success = true;
-                            console.log(resObj.message);
-                            res.json(resObj);
-                            res.end();
-                        })
-            })
+    sqlConn.query(SP_update_query)
+        .then(function (){
+
+            var success_message = "***  { ADMIN_USER : " + admin_user_name + " } Match scores successfully updated for matchID " + matchID + " [Winning TeamID: " + winningTeamID + "]";
+            resObj.message = success_message;
+            resObj.success = true;
+            console.log(resObj.message);
+
+            // Activate next day's match(es)
+            activateNextMatch()
+                .then(function(){
+                    //all steps so far have been successful!
+                    utils.logMe("*** Activated next day's match");
+                    res.json(resObj);
+                    res.end();
+                });
         })
         .catch(function (err) {
             resObj.message = "ERR_USER_NOT_VERIFIED:: Error trying to validate permissions for user '" + req.query.token + "'. Please check admin log for more details.";
@@ -202,7 +210,6 @@ app.post("/api/adminUpdateAfterMatch",function (req,res) {
             res.json(resObj);
             res.end();
         });
-
 });
 
 app.post("/api/r00tSendAdminEmail", function (req, res) {
@@ -272,6 +279,7 @@ var activateNextMatch = function(){
     var SP_activate_query = "CALL sp_activate_next_match();";
     return sqlConn.query(SP_activate_query);
 }
+
 
 /*app starts here....*/
 

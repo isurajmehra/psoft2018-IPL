@@ -9,6 +9,7 @@ var morgan = require('morgan');
 var Sequelize = require('sequelize');
 var bodyParser = require('body-parser');      //for letting Express handle POST data
 var favicon = require('serve-favicon');
+var cors = require('cors');
 
 var schedule = require('node-schedule');
 //var moment = require('moment');
@@ -48,6 +49,7 @@ var sqlConn = new Sequelize(
 /* ========================== MIDDLEWARE LAYER =============================*/
 
 var router = express.Router();
+
 
 //middleware to use for all requests...
 router.use(function (req, res, next) {
@@ -98,6 +100,7 @@ app.use(bodyParser.json());                 		//this lets Express handle POST da
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 app.use(router);
+app.use(cors());            //cross browser origin support
 
 /*========================== SCHEDULER =====================================*/
 //function to check and lock matches; runs two times, as according to IPL 2017 times (1020 hrs and 1420 hrs UTC/server times are in EST)

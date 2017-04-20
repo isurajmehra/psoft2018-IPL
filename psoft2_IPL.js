@@ -11,6 +11,7 @@ var morgan = require('morgan');
 var Sequelize = require('sequelize');
 var bodyParser = require('body-parser');      //for letting Express handle POST data
 var favicon = require('serve-favicon');
+var cors = require('cors');
 
 var dbconfig = require('./api/dbconfig.js');        //load config module
 
@@ -76,6 +77,8 @@ router.use(function (req, res, next) {
     utils.logMe("Middleware layer entered...") ;
     next();             //move on...
 });
+
+app.use(cors());			//cross browser origin support
 
 /*=====================================Routing and APIs=====================================*/
 

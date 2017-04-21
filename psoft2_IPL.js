@@ -66,7 +66,7 @@ app.use(favicon(__dirname + '/assets/img/favicon.ico'));
 app.use(bodyParser.json());                 		//this lets Express handle POST data
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
-		
+app.use(cors());    //cross browser origin support
 
 var router = express.Router();
 
@@ -78,7 +78,6 @@ router.use(function (req, res, next) {
     utils.logMe("Middleware layer entered...") ;
     next();             //move on...
 });
-app.use(cors());    //cross browser origin support
 /*=====================================Routing and APIs=====================================*/
 
 //default route

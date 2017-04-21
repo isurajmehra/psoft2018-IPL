@@ -99,8 +99,9 @@ router.use(function (req, res, next) {
 app.use(bodyParser.json());                 		//this lets Express handle POST data
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
-app.use(router);
 app.use(cors());            //cross browser origin support
+
+app.use(router);
 
 /*========================== SCHEDULER =====================================*/
 //function to check and lock matches; runs two times, as according to IPL 2017 times (1020 hrs and 1420 hrs UTC/server times are in EST)

@@ -4,12 +4,17 @@
 var nodemailer = require('nodemailer');
 var moment = require('moment');
 
-var emailConfig = require('./smtpconfig.js');
+
+var emailConfig = "";
+
+try {
+    emailConfig = require('../config/smtpconfig.js');          //application config
+}
+catch(e){
+    throw e;
+}
 
 /* logMe(message) - Log messages to console */
-
-
-
 module.exports.logMe = function (message) {
     console.log("[" + getNow() + "] " + message);
 };

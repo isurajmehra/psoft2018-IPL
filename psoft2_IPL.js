@@ -14,24 +14,43 @@ var bodyParser = require('body-parser');            //for Express to handle POST
 var favicon = require('serve-favicon');
 var cors = require('cors');
 
-//var psoftConfig = require('./config/psoft2config.js');    //TODO: implement config module
-var dbconfig = require('./api/dbconfig.js');        //load config module
+//load utility module
+var utils =  "";
 
-//load API modules
-var utils = require("./api/PS2Utils.js");
+/*==========================Load config===================================*/
 
-//define port that server will run on
-var port = 8080;                                        //TODO: get from config file
+var app_config = "";
+var db_config = "";
+
+try {
+    utils = require("./api/PS2Utils.js");
+    app_config = require('./config/psoft_config.js');          //application config
+    db_config = require('./config/dbconfig.js');                 //database config
+}
+catch(e){
+    if(utils == "") {
+        console.log(e);
+    }
+    else {
+        utils.logMe(e);
+    }
+    return;
+}
+
+var port = app_config.app_port;         //port that predictsoft server will run on
+var app_name = app_config.app_name;
+var app_version = app_config.app_version;
+
 var app = express();
 
 /*==========================DB definitions================================*/
 
 var sqlConn = new Sequelize(
-    dbconfig.database,    //prod DB
-    dbconfig.user,          //user
-    dbconfig.password,      //pass
+    db_config.database,    //Predictsoft DB
+    db_config.user,
+    db_config.password,
     {
-        host: dbconfig.host,
+        host: db_config.host,
         dialect: 'mysql',
         logging: false,
         define: {
@@ -68,7 +87,7 @@ var gameModule = require("./api/gameModule.js");
 
 //middleware to use for all requests...
 router.use(function (req, res, next) {
-    utils.logMe("Middleware layer entered...") ;
+    //utils.logMe("Middleware layer entered...") ;
     next();             //move on...
 });
 
@@ -109,9 +128,6 @@ app.get("/api/nextmatch", function (req, res) {
             resObj.count = matches.length;
 
             for (var n = 0; n < matches.length; n++) {
-
-                //TODO: update query to also select current predictions for user
-
                 resObj.matchData.push({
                     matchID: matches[n].matchID,
                     points: matches[n].points,
@@ -127,8 +143,6 @@ app.get("/api/nextmatch", function (req, res) {
                     date: matches[n].date
                 });
             }
-
-            //console.log(JSON.stringify(resObj.matchData));
         })
         .then(function () {
             //also get remaining number of predictions
@@ -136,7 +150,7 @@ app.get("/api/nextmatch", function (req, res) {
             sqlConn.query(getRemPredsQRY,
                 {type: sqlConn.QueryTypes.SELECT})
                 .then(function (remPredictions) {
-                    //console.log(JSON.stringify(remPredictions,true));
+                    //utils.logMe(JSON.stringify(remPredictions,true));
                     resObj.rem_predictions = remPredictions[0].rem_preds;
                     resObj.success = true;
                     res.json(resObj);
@@ -243,7 +257,7 @@ app.get("/api/getScores", function (req, res) {
         resObj.success = true;
         
         for (var n = 0; n < scores.length; n++) {
-            //console.log(JSON.stringify(scores));
+            //utils.logMe(JSON.stringify(scores));
             resObj.scoreData.push({
                 Name: scores[n].name,
                 Points: scores[n].points
@@ -323,8 +337,6 @@ app.get("/api/getHistory", function (req, res) {
         "m.matchID = p.matchID AND " +
         "m.isActive=0";
 
-    //console.log(query);
-
     sqlConn.query(historyQuery, {type: sqlConn.QueryTypes.SELECT})
         .then(function (matches) {
 
@@ -345,7 +357,7 @@ app.get("/api/getHistory", function (req, res) {
                     result: outcome
                 });
             }
-            //console.log("\n&&&&&USER_HISTORY::\n"+JSON.stringify(resObj)+"\n&&&&&&&&&\n");
+            //utils.logMe("\n&&&&&USER_HISTORY::\n"+JSON.stringify(resObj)+"\n&&&&&&&&&\n");
             res.json(resObj);
             res.end();
             return;
@@ -391,14 +403,11 @@ app.get("/api/getHistoryByID", function (req, res) {
         "m.matchID = p.matchID AND " +
         "m.isActive=0 AND m.isLocked=1 AND m.isHidden=0";
 
-    //console.log(historyIDQuery);
     sqlConn.query(historyIDQuery, {type: sqlConn.QueryTypes.SELECT})
         .then(function (matches) {
             //fill response object and return
             resObj.success = true;
             resObj.count = matches.length;
-
-
             resObj.userData['name'] = matches[0].player_name;
             resObj.userData['points'] = matches[0].player_points;
 
@@ -415,7 +424,7 @@ app.get("/api/getHistoryByID", function (req, res) {
                     result: outcome
                 });
             }
-            //console.log("\n&&&&&USER_HISTORY::\n"+JSON.stringify(resObj)+"\n&&&&&&&&&\n");
+            //utils.logMe("\n&&&&&USER_HISTORY::\n"+JSON.stringify(resObj)+"\n&&&&&&&&&\n");
             res.json(resObj);
             res.end();
         })
@@ -528,7 +537,7 @@ app.post("/api/adduser", function (req, res) {
     return;
     /////////////////////////////////////////    
     
-    //Password hashing has been taken care of on the client side
+    //Note: Password hashing has been taken care of on the client side
     if (req.body.name == "" || req.body.email == "" || req.body.password == "") {
         utils.logMe("Blank values trying to add user(email given: " + req.body.email + "). Not registering!");
         return;
@@ -581,136 +590,6 @@ app.post("/api/adduser", function (req, res) {
         res.json(resObj);
         return;
     });
-});
-
-//create/update prediction for user
-app.post("/api/submitPredictionOLDIPL", function (req, res) {
-    
-    var resObj = {
-        message: "",
-        success: false
-    };
-    
-    //utils.logMe("predObj::" + JSON.stringify(req.body.predObj));
-    var rows = req.body.predObj.length;
-    var userID = 0;
-    var team_id = 0;
-    var match_id = 0;
-    var team_id2 = 0;
-    var match_id2 = 0;
-    
-    sqlConn.query(
-        "SELECT userID from users WHERE auth_key = '" + req.body.token + "'",
-    { type: sqlConn.QueryTypes.SELECT })
-    .then(function (user_row) {
-        
-        userID = user_row[0].userID;
-        team_id = req.body.predObj[0].teamID;
-        match_id = req.body.predObj[0].matchID;
-        
-        return Match.find({ where: { matchID: match_id, isLocked: 0 } })
-            .then(function (active_rows) {
-            
-            //check if this match has been locked                
-            if (active_rows == null) {
-                
-                utils.logMe("UserID " + userID + " has tried predicting " + match_id + " after lockdown period. This has been logged!");
-                throw "Sorry, the game has been locked! Prediction is not allowed at this time.";
-            }
-            //not locked, so prediction change is allowed
-            return Prediction
-                    .findOrCreate({ where: { playerID: userID, matchID: match_id }, defaults: { predictedTeamID: team_id } })
-                    .spread(function (prediction, created) {
-                if (!created) {
-                    //utils.logMe("TEAMID INSIDE findOrCreate is: " + team_id);
-                    //utils.logMe("EXISTING prediction object:" + JSON.stringify(prediction));
-                    
-                    //prediction exists; update it
-                    sqlConn.query(
-                        "UPDATE prediction SET predictedTeamID=" + team_id + " WHERE playerID=" + userID + " AND matchID=" + match_id,
-                            { type: sqlConn.QueryTypes.UPDATE })
-                            .then(function (updated) {
-                        utils.logMe("Updated for user " + userID + " for matchID: " + match_id + "; new team: " + team_id);
-                        resObj.success = true;
-                    })
-                }
-                else {
-                    //new row has been created
-                    utils.logMe("New row has been created for user " + userID + " for matchID: " + match_id + "; new team: " + team_id);
-                    resObj.success = true;
-                }
-            });
-            //return resObj;
-            resObj.success = true;
-        })
-            .catch(function (err) {
-            //console.log("\n\nCAUGHT, NOW RETURNING resObj!");
-            //throw err;
-            //utils.logMe("PRED_EXCEPTION::" + err);
-            resObj.message = err;
-            resObj.success = false;
-            res.json(resObj);
-            return;
-        })
-    })
-    .then(function () {
-        //utils.logMe("userID from second row is: " + userID);
-        if (rows > 1) {
-            //update second game if exists
-            team_id2 = req.body.predObj[1].teamID;
-            match_id2 = req.body.predObj[1].matchID;
-            
-            Match.find({ where: { matchID: match_id2, isLocked: 0 } })
-            .then(function (active_rows) {
-                //check if this match has been locked                
-                if (active_rows == null) {
-                    utils.logMe("UserID " + userID + " has tried predicting matchID " + match_id2 + " after lockdown period. This has been logged!");
-                    throw "Sorry, the game has been locked! Prediction is not allowed at this time.";
-                }
-                //not locked, so prediction change is allowed            
-                return Prediction
-                    .findOrCreate({ where: { playerID: userID, matchID: match_id2 }, defaults: { predictedTeamID: team_id2 } })
-                    .spread(function (prediction2, created) {
-                    if (!created) {
-                        //utils.logMe("TEAMID INSIDE findOrCreate is: " + team_id2);
-                        //utils.logMe("EXISTING prediction object:" + JSON.stringify(prediction2));
-                        
-                        //prediction exists; update it
-                        sqlConn.query(
-                            "UPDATE prediction SET predictedTeamID=" + team_id2 + " WHERE playerID=" + userID + " AND matchID=" + match_id2,
-                                { type: sqlConn.QueryTypes.UPDATE })
-                                .then(function (updated2) {
-                            utils.logMe("Updated for user " + userID + " for matchID: " + match_id2 + "; new team: " + team_id2);
-                            resObj.success = true;
-                        })
-                    }
-                    else {
-                        //new row has been created
-                        utils.logMe("New row has been created for user " + userID + " for matchID: " + match_id2 + "; new team: " + team_id2);
-                        resObj.success = true;
-                    }
-                })
-            })
-            .catch(function (err) {
-                //utils.logMe("PRED_EXCEPTION::" + err);
-                resObj.message = err;
-                resObj.success = false;
-                res.json(resObj);
-                return;
-            })
-        }
-        res.json(resObj);
-        return;
-    })
-    .then(function(){
-        utils.sendConfirmation(match_date, "<p><strong>You have updated your prediction to:</strong></p><ul>" + selectionList + "</ul>", playerFullName, playerEmail);
-    })
-    .catch(function (err) {
-        //utils.logMe("PRED_EXCEPTION::" + err);
-        resObj.message = err;
-        resObj.success = false;
-        return resObj;
-    })
 });
 
 //create/update prediction for user
@@ -994,53 +873,8 @@ app.post("/api/submitPrediction", function (req, res) {
 
 });
 
-/*=====================================Admin functions===============================*/
-
-app.get("/api/adminUpdateScores", function (req, res) {
-    var resObj = {
-        message: "",
-        success: false
-    };
-    
-    var playerToken = req.query.token;
-    var matchID = req.query.matchID;
-    var winningTeamID = req.query.winningTeamID;
-    var scoreIncBy = req.query.scoreIncBy;
-    
-    //check if admin user
-    sqlConn.query(
-        "SELECT * FROM users WHERE auth_key = '" + playerToken + "' AND isAdmin = 1",
-        { type: sqlConn.QueryTypes.SELECT })
-        .then(function (isAdmin) { 
-            
-        if (!isAdmin) {
-            //not an admin
-            resObj.message = "Specified user is not an admin";
-            resObj.success = false;
-            res.json(resObj);
-            res.end();
-        }
-
-        //TODO:: success....now update the scores list
-        utils.logMe("This is where teamID " + winningTeamID + " is to be updated as winner for matchID " + matchID + ", and score will be incremented by " + scoreIncBy);
-    })
-      .catch(function (err) {
-        utils.logMe("Error trying to update scores for user " + req.query.token + ". Details:\n" + err);
-        resObj.message = "Error trying to update scores. Details: "+err;
-        resObj.success = false;
-        res.json(resObj);
-        res.end();
-        return;
-    })
-})
-
-app.get("/api/uTestEmail", function (req, res) {
-    utils.sendConfirmation(new Date(), "You have chosen England as your team", "Khal Drogo", 'grv2k6@gmail.com');
-    res.json({message: 'OK'});
-})
-
 /*=====================================Init app=====================================*/
 
 app.listen(port);
 
-utils.logMe("PredictSoft v2.10 started on port " + port);
+utils.logMe(app_name + " " + app_version + " started on port " + port);

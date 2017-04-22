@@ -1,6 +1,6 @@
 {
   "name": "psoft2_euro",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "NWA Fantasy app modified for EURO 2016",
   "main": "psoft21.js",
   "scripts": {

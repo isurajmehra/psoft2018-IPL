@@ -14,24 +14,48 @@ var cors = require('cors');
 var schedule = require('node-schedule');
 //var moment = require('moment');
 
-//load API modules
-var dbconfig = require('./api/dbconfig.js');        //load config module
-var utils = require("./api/PS2Utils.js");
-//var users = require("./api/userModule.js")
 
-var port = 8090;                //port that psoft admin server runs on
-var lock_threshold = 15;        //look-ahead time in minutes TODO: get from config file...also create config file!
+//load utility module
+var utils =  "";
+
+/*==========================Load config===================================*/
+
+var app_config = "";
+var db_config = "";
+
+try {
+    utils = require("./api/PS2Utils.js");
+    app_config = require('./config/psoft_config.js');          //application config
+    db_config = require('./config/dbconfig.js');                 //database config
+}
+catch(e){
+    if(utils == "") {
+        console.log(e);
+    }
+    else {
+        utils.logMe(e);
+    }
+    return;
+}
+
+var port = app_config.r00t_port;         //port that predictsoft r00t will run on
+var app_name = app_config.app_name;
+var app_version = app_config.app_version;
+
+var app = express();
+
+var lock_threshold = app_config.match_lock_threshold_in_minutes;        //look-ahead time in minutes
 
 var admin_user_name = "N/A";    //global var to track user information  TODO: convert to JSON object if moar r00t parms need to be tracked
 
 /*==========================DB definitions================================*/
 
 var sqlConn = new Sequelize(
-    dbconfig.database,    //prod DB
-    dbconfig.user,          //user
-    dbconfig.password,      //pass
+    db_config.database,    //prod DB
+    db_config.user,          //user
+    db_config.password,      //pass
     {
-        host: dbconfig.host,
+        host: db_config.host,
         dialect: 'mysql',
         logging: false,
         define: {
@@ -285,6 +309,6 @@ var activateNextMatch = function(){
 /*app starts here....*/
 
 app.listen(port);
-utils.logMe("psoftr00t started on port " + port);
+utils.logMe("psoftr00t service started on port " + port);
 utils.logMe("Started scheduler for auto-locking 5:30 AM CST match " + lockFirstMatchIPL2017.name);
 utils.logMe("Started scheduler for auto-locking 9:30 AM CST match " + lockSecondMatchIPL2017.name);

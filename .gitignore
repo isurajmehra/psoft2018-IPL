@@ -3,3 +3,6 @@
 /src/node_modules/
 /api/dbconfig.js
 /api/smtpconfig.js
+/config/smtpconfig.js
+/config/dbconfig.js
+/config/psoft_config.js

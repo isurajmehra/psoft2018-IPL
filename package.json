@@ -1,27 +1,26 @@
 {
-  "name": "psoft2_euro",
+  "name": "Predictsoft_IPL_server",
   "version": "2.1.1",
-  "description": "NWA Fantasy app modified for EURO 2016",
-  "main": "psoft21.js",
+  "description": "NWA Fantasy app modified for IPL 2017",
+  "main": "psoft2_IPL.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/grv2k8/Psoft2-EURO.git"
+    "url": "git+https://github.com/grv2k8/psoft2_IPL.git"
   },
   "keywords": [
     "nana",
     "nofapp",
-    "psoft21",
-    "grv"
+    "psoft21"
   ],
   "author": "Gaurav R Joshi",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/grv2k8/Psoft2-EURO/issues"
+    "url": "https://github.com/grv2k8/psoft2_IPL/issues"
   },
-  "homepage": "https://github.com/grv2k8/Psoft2-EURO#readme",
+  "homepage": "https://github.com/grv2k8/psoft2_IPL#readme",
   "dependencies": {
     "body-parser": "^1.15.1",
     "cors": "^2.8.3",

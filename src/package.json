@@ -1,7 +1,7 @@
 {
-  "name": "predictSoft_v2_IPL",
+  "name": "predictSoft_IPL",
   "version": "1.0.0",
-  "description": "NWA Online Fantasy App - IPL 2016",
+  "description": "NWA Online Fantasy App - IPL",
   "author": "Gaurav R Joshi",
   "bugs": "ever3stmomo@gmail.com",
   "dependencies": {

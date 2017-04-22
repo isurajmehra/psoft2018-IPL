@@ -600,7 +600,7 @@ app.post("/api/submitPrediction", function (req, res) {
         success: false
     };
 
-    utils.logMe("predObj::" + JSON.stringify(req.body.predObj));
+    //utils.logMe("predObj::" + JSON.stringify(req.body.predObj));
     if (!req.body || !req.body.predObj) {
         res.json({Message: "Invalid request, aborting..."});
         return;

@@ -1,26 +1,28 @@
 /*
-(C)grjoshi 3/30/2016
-psoft2.js - Main server code for PredictSoft v2
-			Handles database operations and APIs for reading/writing data
-      Forked off of NoFApp v1 built for Twenty 20 Cricket 2016
-*/
+ (C)grjoshi
+ Started: 3/30/2016
+ Last edit: 4/17/2017
+ psoft2.js - Main server code for PredictSoft v2
+ Handles database operations and APIs for reading/writing data
+ Forked off of NoFApp v1 built for Twenty 20 Cricket 2016
+ */
 
 var express = require('express');
-var app = express();
 var morgan = require('morgan');
 var Sequelize = require('sequelize');
-var bodyParser = require('body-parser');      //for letting Express handle POST data
+var bodyParser = require('body-parser');            //for Express to handle POST data
 var favicon = require('serve-favicon');
 var cors = require('cors');
 
+//var psoftConfig = require('./config/psoft2config.js');    //TODO: implement config module
 var dbconfig = require('./api/dbconfig.js');        //load config module
 
 //load API modules
 var utils = require("./api/PS2Utils.js");
-//var users = require("./api/userModule.js")
 
 //define port that server will run on
-var port = 8080;
+var port = 8080;                                        //TODO: get from config file
+var app = express();
 
 /*==========================DB definitions================================*/
 
@@ -30,7 +32,6 @@ var sqlConn = new Sequelize(
     dbconfig.password,      //pass
     {
         host: dbconfig.host,
-        //host: 'gubuntu.duckdns.org',
         dialect: 'mysql',
         logging: false,
         define: {
@@ -48,15 +49,7 @@ var Prediction = sqlConn.import(__dirname + "/models/predictionModel");
 var Match = sqlConn.import(__dirname + "/models/matchModel");
 //var Team = sqlConn.import(__dirname + "/models/teamModel");
 
-//var admin = require("./api/PS2Admin.js");
-
-//define relations
-//Match.hasMany(Team, {foreignKey: 'teamID'});
-//Team.belongsTo(Match, {foreignKey: 'team1ID'});
-//Team.belongsTo(Match, {foreignKey: 'team2ID'});
-
 sqlConn.sync();
-
 utils.logMe("Loaded Sequelize modules...");
 
 
@@ -78,6 +71,7 @@ router.use(function (req, res, next) {
     utils.logMe("Middleware layer entered...") ;
     next();             //move on...
 });
+
 /*=====================================Routing and APIs=====================================*/
 
 //default route
@@ -158,107 +152,6 @@ app.get("/api/nextmatch", function (req, res) {
             res.json(resObj);
             res.end();
         })
-});
-
-//return the next match(es) information
-app.get("/api/nextmatchOLDIPL", function (req, res) {
-    var resObj = {
-        count: 0,
-        matchData: [],
-        message: "",
-        success: false
-    };
-    //Using isActive column to determine which matches are to be shown
-    sqlConn.query(
-        "SELECT team1.teamID as t1ID,team1.name as t1Name,team1.groupID as t1Group, team2.teamID as t2ID,team2.name as t2Name, team2.groupID as t2Group, match.matchID as matchID, match.isLocked as locked, match.MatchDate as date FROM `match` LEFT JOIN (teams as team1, teams as team2) ON (team1.teamID = `match`.Team1ID AND team2.teamID = `match`.Team2ID) WHERE isActive=1",
-        { type: sqlConn.QueryTypes.SELECT })
-        .then(function (matches) {
-        //fill response object and return
-        resObj.success = true;
-        resObj.count = matches.length;
-        
-        for (var n = 0; n < matches.length; n++) {
-            
-            //TODO: update query to also select current predictions for user            
-            
-            resObj.matchData.push({
-                matchID: matches[n].matchID,
-                team1ID: matches[n].t1ID,
-                team1Name: matches[n].t1Name,
-                //team1Group: matches[n].t1Group,
-                team2ID: matches[n].t2ID,
-                team2Name: matches[n].t2Name,
-                //team2Group: matches[n].t2Group,
-                locked: (matches[n].locked == 0)?false:true,        //this will enable/disable prediction for particular match
-                date: matches[n].date
-            });
-        }
-        res.json(resObj);
-        res.end();
-        return;
-    })
-        .catch(function (err) {
-        //match find failed. Reply with message
-        utils.logMe("Error trying to fetch match details.Message:\n" + err);
-        resObj.success = false;
-        resObj.message = err;
-        
-        res.json(resObj);
-        res.end();
-        return;
-    })
-})
-
-//list predictions for upcoming match from submitted players
-app.get("/api/getPredictionsOLDIPL", function (req, res) {
-    var resObj = {
-        predictData: [],
-        message: "",
-        success: false
-    };
-
-    var query = "";
-    var tokenID = req.query.token;
-
-    //check if match is locked, in which case only return current user's prediction
-    Match.find({ where: { isActive: 1 } })
-        .then(function (active_rows) {
-        if (active_rows == null) {
-            return;
-        }
-        if (active_rows.isHidden == 1) {
-            //show only current user's prediction
-            query = "SELECT u.name as name, (SELECT Name FROM teams WHERE teamID = p.predictedTeamID) As PredictedTeam FROM prediction p, users u WHERE p.playerID = u.userID AND u.userID = (SELECT userID from users where auth_key = '" + tokenID + "') AND p.matchID IN ( SELECT matchID FROM `match` WHERE isActive =1)";
-        }
-        else {
-            //show everyone's predictions
-            query = "SELECT u.name as name, (SELECT Name FROM teams WHERE teamID = p.predictedTeamID) As PredictedTeam FROM prediction p, users u WHERE p.playerID = u.userID AND p.matchID IN ( SELECT matchID FROM `match` WHERE isActive =1 AND isHidden=0)";
-        }
-
-        sqlConn.query(query, { type: sqlConn.QueryTypes.SELECT })
-            .then(function (predictions) {
-            for (var n = 0; n < predictions.length; n++) {
-
-                resObj.predictData.push({
-                    Name: predictions[n].name,
-                    Team: predictions[n].PredictedTeam
-                })
-            }
-            //utils.logMe(JSON.stringify(resObj));
-            resObj.success = true;
-            res.json(resObj);
-            res.end();
-            return;
-        })
-            .catch(function (err) {
-            utils.logMe("Error trying to fill in prediction data. Details:\n" + err);
-            resObj.success = false;
-            resObj.message = err;
-            res.json(resObj);
-            res.end();
-            return;
-        })
-    })
 });
 
 app.get("/api/getPredictions", function (req, res) {
@@ -400,67 +293,6 @@ app.get("/api/checkIfPredicted", function (req, res) {
         resObj.message = err;
         resObj.hasPredicted = true;
         res.json(resObj);
-        return;
-    })
-})
-
-//get user's game history
-app.get("/api/getHistoryOLDIPL", function (req, res) {
-    var resObj = {
-        count: 0,
-        historyData: [],
-        message: "",
-        success: false
-    };
-    
-    var playerToken = req.query.token;
-    
-    sqlConn.query(
-        "SELECT" +
-        " m.MatchDate as match_date," +
-        "(SELECT teams.Name FROM teams WHERE teams.teamID = m.Team1ID) as team1," +
-        "(SELECT teams.Name FROM teams WHERE teams.teamID = m.Team2ID) as team2," +
-        "(SELECT teams.Name FROM teams WHERE teams.teamID = p.predictedTeamID) as predicted_team," +
-        "(SELECT teams.Name FROM teams WHERE teams.teamID = m.WinningTeamID) as winning_team " +
-        "FROM prediction p, users u, teams t, `match` m " +
-        "WHERE " +
-        "p.playerID = (SELECT userID FROM users WHERE auth_key = '" + playerToken + "' ) " +
-        "AND u.userid = p.playerID " +
-        "AND t.teamID = p.predictedTeamID " +
-        "AND m.matchID = p.matchID " +
-        "AND m.isActive=0",
-  { type: sqlConn.QueryTypes.SELECT })
-    .then(function (matches) {
-        
-        //fill response object and return
-        resObj.success = true;
-        resObj.count = matches.length;
-        
-        for (var n = 0; n < matches.length; n++) {
-            var outcome = (matches[n].predicted_team == null)?"[TBD]":((matches[n].predicted_team == matches[n].winning_team)?"WIN":"LOSS");
-            
-            resObj.historyData.push({
-                team1Name: matches[n].team1,
-                team2Name: matches[n].team2,
-                matchDate: matches[n].match_date,
-                predictedTeam: matches[n].predicted_team,
-                winningTeam: matches[n].winning_team,
-                result: outcome
-            });
-        }
-        //console.log("\n&&&&&USER_HISTORY::\n"+JSON.stringify(resObj)+"\n&&&&&&&&&\n");
-        res.json(resObj);
-        res.end();
-        return;
-    })
-    .catch(function (err) {
-        //match find failed. Reply with message
-        utils.logMe("Error trying to fetch user match history. Details:\n" + err);
-        resObj.success = false;
-        resObj.message = err;
-        
-        res.json(resObj);
-        res.end();
         return;
     })
 })

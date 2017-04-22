@@ -32,7 +32,6 @@ var sqlConn = new Sequelize(
     dbconfig.password,      //pass
     {
         host: dbconfig.host,
-        //host: 'gubuntu.duckdns.org',
         dialect: 'mysql',
         logging: false,
         define: {
@@ -49,7 +48,6 @@ var sqlConn = new Sequelize(
 /* ========================== MIDDLEWARE LAYER =============================*/
 
 var router = express.Router();
-
 
 //middleware to use for all requests...
 router.use(function (req, res, next) {
@@ -81,7 +79,6 @@ router.use(function (req, res, next) {
                 throw (midwr_ret_object.message);
             }
             admin_user_name = adminObject[0].name;
-            //console.log("1");
         }).then(function(){
         utils.logMe("### ADMIN_AUTH:: Logged in as " + admin_user_name);
         next();         //move on...

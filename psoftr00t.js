@@ -126,7 +126,7 @@ app.use(router);
 
 /*========================== SCHEDULER =====================================*/
 //function to check and lock matches; runs two times, as according to IPL 2017 times (1020 hrs and 1420 hrs UTC/server times are in EST)
-var lockFirstMatchIPL2017 = schedule.scheduleJob('25 6 * * *',function(){      //6:25 am EST
+var lockFirstMatchIPL2017 = schedule.scheduleJob('30 5 * * *',function(){      //6:25 am EST
 
     lockMatch(lock_threshold)
         .then(function (sp_response) {
@@ -140,7 +140,7 @@ var lockFirstMatchIPL2017 = schedule.scheduleJob('25 6 * * *',function(){      /
         });
 });
 
-var lockSecondMatchIPL2017 = schedule.scheduleJob('25 10 * * *',function(){     //10:25 am EST
+var lockSecondMatchIPL2017 = schedule.scheduleJob('30 9 * * *',function(){     //10:25 am EST
 
     lockMatch(lock_threshold)
         .then(function (sp_response) {

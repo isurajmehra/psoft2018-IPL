@@ -182,9 +182,24 @@ app.post("/api/adminActivateNextMatch", function (req, res) {
         });
 });
 
-//update scores and next day's match
+app.post("/api/FixTables",function (req,res) {
+
+    //regenerate user scores by calculating from prediction and match history (run to fix scores in user table)
+    fixUserScores()
+        .then(function(){
+
+            //add any additional check and fix conditions here
+
+            var msg = "Ran stored procedure to fix database tables";
+            utils.logMe(msg);
+            res.json(msg);
+            return res;
+        });
+});
+
 app.post("/api/adminUpdateAfterMatch",function (req,res) {
 
+    //update scores and next day's match
     var resObj = {
         message: "",
         success: false
@@ -303,7 +318,14 @@ var activateNextMatch = function(){
     utils.logMe("Running stored procedure to activate next match(es)");
     var SP_activate_query = "CALL sp_activate_next_match();";
     return sqlConn.query(SP_activate_query);
+};
+
+var fixUserScores = function () {
+    //TODO: stored procedure to fix user tables
+    return;
 }
+    
+
 
 
 /*app starts here....*/

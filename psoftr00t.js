@@ -136,23 +136,7 @@ var lockFirstMatchIPL2017 = schedule.scheduleJob('30 5 * * *',function(){      /
 
             getPredictionList()
                 .then(function (pred_list) {
-                    //1. create HTML table of predictions
-                    var next_match_date =  moment(pred_list[0].MatchDate).format("MMMM Do YYYY, h:mm a");
-                    var title = "Prediction list for next upcoming match at " + next_match_date;
-                    var email_body = createPredictionEmailBody(next_match_date,buildPredictionTable(pred_list));
-
-                    //2. send email to every player with prediction table for next match
-                    var dist_list = getEmails(pred_list);
-
-                    //TODO: foreach the dist_list and send email to everyone in it
-                    // POSSIBLE_BUG:: distro needs to be ALL players, not just the ones who predicted! (change the getEmails(..) function for that)
-                    for(var i=0;i<dist_list.length;i++){
-                     utils.sendMessage(
-                     dist_list[i],                //To
-                     title,                      //Title of email
-                     email_body                 //Message Body
-                     );
-                     }
+                    sendEmailWithPredictions(pred_list);
                     return;
                 })
         })
@@ -170,23 +154,7 @@ var lockSecondMatchIPL2017 = schedule.scheduleJob('30 9 * * *',function(){     /
             utils.logMe(lock_done_msg);
             getPredictionList()
                 .then(function (pred_list) {
-                    //1. create HTML table of predictions
-                    var next_match_date =  moment(pred_list[0].MatchDate).format("MMMM Do YYYY, h:mm a");
-                    var title = "Prediction list for next upcoming match at " + next_match_date;
-                    var email_body = createPredictionEmailBody(next_match_date,buildPredictionTable(pred_list));
-
-                    //2. send email to every player with prediction table for next match
-                    var dist_list = getEmails(pred_list);
-
-                    //TODO: foreach the dist_list and send email to everyone in it
-                    // POSSIBLE_BUG:: distro needs to be ALL players, not just the ones who predicted! (change the getEmails(..) function for that)
-                    for(var i=0;i<dist_list.length;i++){
-                        utils.sendMessage(
-                            dist_list[i],                //To
-                            title,                      //Title of email
-                            email_body                 //Message Body
-                        );
-                    }
+                    sendEmailWithPredictions(pred_list);
                     return;
                 })
         })
@@ -394,7 +362,7 @@ var activateNextMatch = function(){
 var fixUserScores = function () {
     //TODO: stored procedure to fix user tables
     return;
-}
+};
     
 /*
 create HTML table of predictions
@@ -415,7 +383,7 @@ var buildPredictionTable = function (json) {
     HTMLTable += "</table>";
 
     return HTMLTable;
-}
+};
 
 var createPredictionEmailBody = function(next_match_date, prediction_table) {
     var email_body = "<html>";
@@ -432,7 +400,29 @@ var createPredictionEmailBody = function(next_match_date, prediction_table) {
      + "<p>&nbsp;</p><p><strong>&nbsp;</strong></p>";*/
     //confirmSnippet is sth like "You chose [TEAM] for the next match.";
     return email_body;
-}
+};
+
+/* Sends email with a list of predictions for the recently locked match to all players */
+var sendEmailWithPredictions = function(prediction_list){
+    //1. create HTML table of predictions
+    var next_match_date =  moment(prediction_list[0].MatchDate).format("MMMM Do YYYY, h:mm a");
+    var title = "Prediction list for next upcoming match at " + next_match_date;
+    var email_body = createPredictionEmailBody(next_match_date,buildPredictionTable(prediction_list));
+
+    //2. send email to every player with prediction table for next match
+    //TODO: get list of ALL players (not just from prediction list)
+    var dist_list = getEmails(prediction_list);
+
+    //TODO: foreach the dist_list and send email to everyone in it
+    // POSSIBLE_BUG:: distro needs to be ALL players, not just the ones who predicted! (change the getEmails(..) function for that)
+    for(var i=0;i<dist_list.length;i++){
+        utils.sendMessage(
+            dist_list[i],                //To
+            title,                      //Title of email
+            email_body                 //Message Body
+        );
+    }
+};
 
 /* Runs query to find the list of the match that was just locked (the immediate next match coming up)*/
 var getPredictionList = function(){

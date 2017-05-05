@@ -129,9 +129,10 @@ app.use(router);
 var lockFirstMatchIPL2017 = schedule.scheduleJob('25 6 * * *',function(){      //6:25 am EST
 
     lockMatch(lock_threshold)
-        .then(function (sp_response) {
+        .then(function (predictionResponse) {
             var lock_done_msg = "*** Upcoming match has been locked successfully at 6:25 AM EDST by psoft scheduler.";
             utils.logMe(lock_done_msg);
+            console.log(predictionResponse);
             return;
         })
         .error(function(err){
@@ -159,10 +160,11 @@ var lockSecondMatchIPL2017 = schedule.scheduleJob('25 10 * * *',function(){     
 app.post("/api/lockNextMatch",function (req, res) {
 
     lockMatch(lock_threshold)
-        .then(function (sp_response) {
+        .then(function (PredictionResponse) {
             var lock_done_msg = "Match locked by API successfully (LOCK_THRESHOLD = " + lock_threshold + " minutes)";
             utils.logMe(lock_done_msg);
             res.json(lock_done_msg);
+            console.log(PredictionResponse);
             return res;
         })
         .error(function(err){
@@ -311,7 +313,31 @@ app.post("/api/r00tSendEmail", function (req, res) {
 var lockMatch = function(threshold){
     utils.logMe("Running stored procedure to lock matches within the next "+threshold+" minutes...");
     var SP_query = "CALL lock_tables('" + threshold + "');";
-    return sqlConn.query(SP_query);
+    //return sqlConn.query(SP_query);
+    sqlConn.query(SP_query)
+        .then(function () {
+
+            var tokenID = "2653fc5aacecc3a065c502b1aa9793fe";
+            var get_predictions_query = "SELECT u.userID, u.name,(SELECT Name FROM teams WHERE teamID = p.predictedTeamID) As PredictedTeam, " +
+                "(SELECT teams.Name FROM teams WHERE teams.teamID = m.Team1ID) AS team1, " +
+                "(SELECT teams.Name FROM teams WHERE teams.teamID = m.Team2ID) AS team2 " +
+                "FROM prediction p, users u, teams t, `match` m " +
+                "WHERE p.playerID = u.userID AND u.userID = (SELECT userID from users where auth_key = '" + tokenID + "') AND " +
+                "p.matchID IN (SELECT matchID FROM `match` WHERE isActive =1) AND p.matchID = m.matchID AND " +
+                "t.teamID IN (m.Team1ID, m.Team2ID, 50) AND p.predictedTeamID = t.teamID " +
+                "UNION ALL " +
+                "SELECT u2.userID, u2.name, (SELECT Name FROM teams WHERE teamID = p2.predictedTeamID) AS PredictedTeam, " +
+                "(SELECT teams.Name FROM teams WHERE teams.teamID = m2.Team1ID) AS team1," +
+                "(SELECT teams.Name FROM teams WHERE teams.teamID = m2.Team2ID) AS team2 " +
+                "FROM prediction p2, users u2, teams t2, `match` m2 " +
+                "WHERE p2.playerID = u2.userID AND p2.matchID IN (SELECT matchID FROM `match` WHERE isActive =1 AND isHidden=0) AND " +
+                "p2.matchID = m2.matchID AND t2.teamID IN (m2.Team1ID, m2.Team2ID, 50) AND " +
+                "u2.auth_key <> '" + tokenID + "' AND p2.predictedTeamID = t2.teamID";
+
+            utils.logMe(get_predictions_query);
+           return sqlConn.query(get_predictions_query,
+                {type: sqlConn.QueryTypes.SELECT});
+        });
 };
 
 var activateNextMatch = function(){

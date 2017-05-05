@@ -35,7 +35,7 @@ module.exports.getNow = function(){
 
 
 //send confirmation of prediction
-module.exports. sendConfirmation = function(matchdate,confirmSnippet,nameOfPlayer,playerEmail){
+module.exports.sendConfirmation = function(matchdate,confirmSnippet,nameOfPlayer,playerEmail){
 
     //console.log("Matchdate value is "+matchdate+", moment is "+moment(matchdate).format("MMMM Do YYYY, h:mm a"));
 
@@ -61,10 +61,9 @@ module.exports.sendAlerts = function(to, title,message){
 
 module.exports.sendMessage = function(to, title,message){
     sendEmail(
-        playerEmail,                        //To
-        'nepalikancha2016@gmail.com',       //From
-        title,                              //Title of email
-        messageBody                         //Message Body
+        to,                        //To
+        title,                     //Title of email
+        message                    //Message Body
     );
 };
 

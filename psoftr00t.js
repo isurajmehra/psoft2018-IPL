@@ -10,6 +10,7 @@ var Sequelize = require('sequelize');
 var bodyParser = require('body-parser');      //for letting Express handle POST data
 var favicon = require('serve-favicon');
 var cors = require('cors');
+var moment = require('moment');
 
 var schedule = require('node-schedule');
 //var moment = require('moment');
@@ -160,12 +161,35 @@ var lockSecondMatchIPL2017 = schedule.scheduleJob('30 9 * * *',function(){     /
 app.post("/api/lockNextMatch",function (req, res) {
 
     lockMatch(lock_threshold)
-        .then(function (PredictionResponse) {
+        .then(function () {
             var lock_done_msg = "Match locked by API successfully (LOCK_THRESHOLD = " + lock_threshold + " minutes)";
             utils.logMe(lock_done_msg);
             res.json(lock_done_msg);
-            console.log(PredictionResponse);
-            return res;
+
+        })
+        .then(function () {
+            getPredictionList()
+                .then(function (pred_list) {
+                     //1. create HTML table of predictions
+                    var next_match_date = pred_list[0].MatchDate;
+                    var title = "Prediction list for next upcoming match at " + moment(next_match_date).format("MMMM Do YYYY, h:mm a");
+                    var email_body = createPredictionEmailBody(next_match_date,buildPredictionTable(pred_list));
+
+                    //2. send email to every player with prediction table for next match
+                    var dist_list = getEmails(pred_list);
+
+                    //TODO: foreach the dist_list and send email to everyone in it
+                    // POSSIBLE_BUG:: distro needs to be ALL players, not just the ones who predicted!
+                    utils.sendMessage(
+                        "ever3stmomo@gmail.com",                //To
+                        title,                      //Title of email
+                        email_body                 //Message Body
+                    );
+                    //console.log("****THIS IS THE DISTRO: \n" + dist_list);
+                    //console.log("****THIS IS THE PREDICTION TABLE: \n" + email_body)
+
+                    return res;
+                })
         })
         .error(function(err){
             res.json("Error trying to lock match by API call. Description: ",err);
@@ -313,31 +337,7 @@ app.post("/api/r00tSendEmail", function (req, res) {
 var lockMatch = function(threshold){
     utils.logMe("Running stored procedure to lock matches within the next "+threshold+" minutes...");
     var SP_query = "CALL lock_tables('" + threshold + "');";
-    //return sqlConn.query(SP_query);
-    sqlConn.query(SP_query)
-        .then(function () {
-
-            var tokenID = "2653fc5aacecc3a065c502b1aa9793fe";
-            var get_predictions_query = "SELECT u.userID, u.name,(SELECT Name FROM teams WHERE teamID = p.predictedTeamID) As PredictedTeam, " +
-                "(SELECT teams.Name FROM teams WHERE teams.teamID = m.Team1ID) AS team1, " +
-                "(SELECT teams.Name FROM teams WHERE teams.teamID = m.Team2ID) AS team2 " +
-                "FROM prediction p, users u, teams t, `match` m " +
-                "WHERE p.playerID = u.userID AND u.userID = (SELECT userID from users where auth_key = '" + tokenID + "') AND " +
-                "p.matchID IN (SELECT matchID FROM `match` WHERE isActive =1) AND p.matchID = m.matchID AND " +
-                "t.teamID IN (m.Team1ID, m.Team2ID, 50) AND p.predictedTeamID = t.teamID " +
-                "UNION ALL " +
-                "SELECT u2.userID, u2.name, (SELECT Name FROM teams WHERE teamID = p2.predictedTeamID) AS PredictedTeam, " +
-                "(SELECT teams.Name FROM teams WHERE teams.teamID = m2.Team1ID) AS team1," +
-                "(SELECT teams.Name FROM teams WHERE teams.teamID = m2.Team2ID) AS team2 " +
-                "FROM prediction p2, users u2, teams t2, `match` m2 " +
-                "WHERE p2.playerID = u2.userID AND p2.matchID IN (SELECT matchID FROM `match` WHERE isActive =1 AND isHidden=0) AND " +
-                "p2.matchID = m2.matchID AND t2.teamID IN (m2.Team1ID, m2.Team2ID, 50) AND " +
-                "u2.auth_key <> '" + tokenID + "' AND p2.predictedTeamID = t2.teamID";
-
-            utils.logMe(get_predictions_query);
-           return sqlConn.query(get_predictions_query,
-                {type: sqlConn.QueryTypes.SELECT});
-        });
+    return sqlConn.query(SP_query);
 };
 
 var activateNextMatch = function(){
@@ -351,8 +351,66 @@ var fixUserScores = function () {
     return;
 }
     
+/*
+create HTML table of predictions
+ */
+var buildPredictionTable = function (json) {
+    var tr;
+    var table = "<table>";
+    for(var i=0;i<json.length; i++){
+        tr = '<tr/>';
+        tr += "<td>" + json[i].name + "</td>";
+        tr += "<td>" + json[i].PredictedTeam + "</td>";
+        table += tr;
+    }
+    table += "</table>";
 
+    return table;
+}
 
+var createPredictionEmailBody = function(match_date, prediction_table) {
+    var email_body = "<html>";
+
+    var email_header_line = "<h1>Here are the predictions for the next match: </h1>";
+
+    email_body += email_header_line;
+    email_body += prediction_table;
+
+    /*var messageBody = "<h1>Thank you " + nameOfPlayer + "!</h1><h2>We have received your submission for " + moment(matchdate).format("MMMM Do YYYY, h:mm a") + ".</h2>"
+     + "<p>&nbsp;</p>"+ confirmSnippet +"<p>&nbsp;</p>"
+     + "<p><strong>Good luck!</strong></p>"
+     + "<p><strong>The Predictsoft team</strong></p>"
+     + "<p>&nbsp;</p><p><strong>&nbsp;</strong></p>";*/
+    //confirmSnippet is sth like "You chose [TEAM] for the next match.";
+    return email_body;
+}
+
+var getPredictionList = function(){
+
+            var get_predictions_query = "SELECT u.name, u.email, m.MatchDate, (SELECT Name FROM teams WHERE teamID = p.predictedTeamID) As PredictedTeam FROM prediction p, users u, teams t, `match` m WHERE p.playerID = u.userID AND p.matchID IN (SELECT matchID FROM `match` WHERE isActive =1) AND p.matchID = m.matchID AND t.teamID IN (m.Team1ID, m.Team2ID, 50) AND p.predictedTeamID = t.teamID";
+
+            //console.log(get_predictions_query);
+            return sqlConn.query(get_predictions_query, {type: sqlConn.QueryTypes.SELECT});
+            //utils.logMe(pred_query_promise);
+            //return pred_query_promise;
+            /*,
+             ;*/
+
+}
+
+/*
+Return array of email addresses from prediction list object
+ */
+var getEmails = function(pred_list) {
+
+    var distro_list = [];
+
+    for(var i=0;i<pred_list.length;i++){
+        distro_list.push(pred_list[i].email);
+    }
+
+    return distro_list;
+}
 
 /*app starts here....*/
 

@@ -154,6 +154,7 @@ app.get("/api/nextmatch", function (req, res) {
                     resObj.rem_predictions = remPredictions[0].rem_preds;
                     resObj.success = true;
                     res.json(resObj);
+                    res.status(200);
                     res.end();
                 })
         })
@@ -162,7 +163,7 @@ app.get("/api/nextmatch", function (req, res) {
             utils.logMe("Error trying to fetch match details.Message:\n" + err);
             resObj.success = false;
             resObj.message = err;
-
+            res.status(500);
             res.json(resObj);
             res.end();
         })

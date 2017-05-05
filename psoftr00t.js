@@ -176,31 +176,7 @@ app.post("/api/lockNextMatch",function (req, res) {
 
             getPredictionList()
                 .then(function (pred_list) {
-                     //1. create HTML table of predictions
-                    var next_match_date = moment(pred_list[0].MatchDate).format("MMMM Do YYYY, h:mm a");
-                    var title = "Prediction list for next upcoming match at " + next_match_date;
-                    var email_body = createPredictionEmailBody(next_match_date,buildPredictionTable(pred_list));
-
-                    //2. send email to every player with prediction table for next match
-                    var dist_list = getEmails(pred_list);
-
-                    //TODO: foreach the dist_list and send email to everyone in it
-                    // POSSIBLE_BUG:: distro needs to be ALL players, not just the ones who predicted! (change the getEmails(..) function for that)
-                    /*for(var i=0;i<dist_list.length;i++){
-                        utils.sendMessage(
-                            dist_list[i],                //To
-                            title,                      //Title of email
-                            email_body                 //Message Body
-                        );
-                    }*/
-                    utils.sendMessage(
-                        "ever3stmomo@gmail.com",                //To
-                        title,                      //Title of email
-                        email_body                 //Message Body
-                    );
-                    //console.log("****THIS IS THE DISTRO: \n" + dist_list);
-                    //console.log("****THIS IS THE PREDICTION TABLE: \n" + email_body)
-
+                    sendEmailWithPredictions(pred_list);
                     return res;
                 })
         })
@@ -409,19 +385,25 @@ var sendEmailWithPredictions = function(prediction_list){
     var title = "Prediction list for next upcoming match at " + next_match_date;
     var email_body = createPredictionEmailBody(next_match_date,buildPredictionTable(prediction_list));
 
-    //2. send email to every player with prediction table for next match
-    //TODO: get list of ALL players (not just from prediction list)
-    var dist_list = getEmails(prediction_list);
+    //2. send email to EVERY player with prediction table for next match
+    getEmailList()
+        .then(function(email_list){
+            for(var i=0;i<email_list.length;i++){
+                utils.sendMessage(
+                    email_list[i].email,         //To
+                    title,                      //Title of email
+                    email_body                 //Message Body
+                );
+            }
+            //console.log("****THIS IS THE DISTRO: \n" + email_list);
+            //console.log("****THIS IS THE PREDICTION TABLE: \n" + email_body)
+            return;
+        })
+        .error(function(err){
+            res.json("Error trying to send email with prediction list. Description: ",err);
+            return;
+        });
 
-    //TODO: foreach the dist_list and send email to everyone in it
-    // POSSIBLE_BUG:: distro needs to be ALL players, not just the ones who predicted! (change the getEmails(..) function for that)
-    for(var i=0;i<dist_list.length;i++){
-        utils.sendMessage(
-            dist_list[i],                //To
-            title,                      //Title of email
-            email_body                 //Message Body
-        );
-    }
 };
 
 /* Runs query to find the list of the match that was just locked (the immediate next match coming up)*/
@@ -443,6 +425,12 @@ var getEmails = function(pred_list) {
     }
 
     return distro_list;
+}
+
+/* Scrapes and fetches all email addresses from users table */
+var getEmailList = function () {
+    var scrape_email_IDs_query = "SELECT email FROM users;"
+    return sqlConn.query(scrape_email_IDs_query, {type: sqlConn.QueryTypes.SELECT});
 }
 
 /*app starts here....*/

@@ -127,14 +127,34 @@ app.use(router);
 
 /*========================== SCHEDULER =====================================*/
 //function to check and lock matches; runs two times, as according to IPL 2017 times (1020 hrs and 1420 hrs UTC/server times are in EST)
-var lockFirstMatchIPL2017 = schedule.scheduleJob('30 5 * * *',function(){      //6:25 am EST
+var lockFirstMatchIPL2017 = schedule.scheduleJob('30 5 * * *',function(){      //5:30 am EST
 
     lockMatch(lock_threshold)
-        .then(function (predictionResponse) {
+        .then(function () {
             var lock_done_msg = "*** Upcoming match has been locked successfully at 6:25 AM EDST by psoft scheduler.";
             utils.logMe(lock_done_msg);
-            console.log(predictionResponse);
-            return;
+
+            getPredictionList()
+                .then(function (pred_list) {
+                    //1. create HTML table of predictions
+                    var next_match_date =  moment(pred_list[0].MatchDate).format("MMMM Do YYYY, h:mm a");
+                    var title = "Prediction list for next upcoming match at " + next_match_date;
+                    var email_body = createPredictionEmailBody(next_match_date,buildPredictionTable(pred_list));
+
+                    //2. send email to every player with prediction table for next match
+                    var dist_list = getEmails(pred_list);
+
+                    //TODO: foreach the dist_list and send email to everyone in it
+                    // POSSIBLE_BUG:: distro needs to be ALL players, not just the ones who predicted! (change the getEmails(..) function for that)
+                    for(var i=0;i<dist_list.length;i++){
+                     utils.sendMessage(
+                     dist_list[i],                //To
+                     title,                      //Title of email
+                     email_body                 //Message Body
+                     );
+                     }
+                    return;
+                })
         })
         .error(function(err){
             utils.logMe("Error trying to lock match by schedule at 6:25 AM EDST. Description: ",err);
@@ -142,13 +162,33 @@ var lockFirstMatchIPL2017 = schedule.scheduleJob('30 5 * * *',function(){      /
         });
 });
 
-var lockSecondMatchIPL2017 = schedule.scheduleJob('30 9 * * *',function(){     //10:25 am EST
+var lockSecondMatchIPL2017 = schedule.scheduleJob('30 9 * * *',function(){     //9:30 am EST
 
     lockMatch(lock_threshold)
-        .then(function (sp_response) {
+        .then(function () {
             var lock_done_msg = "*** Upcoming match has been locked successfully at 10:25 AM EDST by psoft scheduler.";
             utils.logMe(lock_done_msg);
-            return;
+            getPredictionList()
+                .then(function (pred_list) {
+                    //1. create HTML table of predictions
+                    var next_match_date =  moment(pred_list[0].MatchDate).format("MMMM Do YYYY, h:mm a");
+                    var title = "Prediction list for next upcoming match at " + next_match_date;
+                    var email_body = createPredictionEmailBody(next_match_date,buildPredictionTable(pred_list));
+
+                    //2. send email to every player with prediction table for next match
+                    var dist_list = getEmails(pred_list);
+
+                    //TODO: foreach the dist_list and send email to everyone in it
+                    // POSSIBLE_BUG:: distro needs to be ALL players, not just the ones who predicted! (change the getEmails(..) function for that)
+                    for(var i=0;i<dist_list.length;i++){
+                        utils.sendMessage(
+                            dist_list[i],                //To
+                            title,                      //Title of email
+                            email_body                 //Message Body
+                        );
+                    }
+                    return;
+                })
         })
         .error(function(err){
             utils.logMe("Error trying to lock match at 10:25 AM EDST. Description: ",err);
@@ -166,13 +206,11 @@ app.post("/api/lockNextMatch",function (req, res) {
             utils.logMe(lock_done_msg);
             res.json(lock_done_msg);
 
-        })
-        .then(function () {
             getPredictionList()
                 .then(function (pred_list) {
                      //1. create HTML table of predictions
-                    var next_match_date = pred_list[0].MatchDate;
-                    var title = "Prediction list for next upcoming match at " + moment(next_match_date).format("MMMM Do YYYY, h:mm a");
+                    var next_match_date = moment(pred_list[0].MatchDate).format("MMMM Do YYYY, h:mm a");
+                    var title = "Prediction list for next upcoming match at " + next_match_date;
                     var email_body = createPredictionEmailBody(next_match_date,buildPredictionTable(pred_list));
 
                     //2. send email to every player with prediction table for next match
@@ -180,18 +218,18 @@ app.post("/api/lockNextMatch",function (req, res) {
 
                     //TODO: foreach the dist_list and send email to everyone in it
                     // POSSIBLE_BUG:: distro needs to be ALL players, not just the ones who predicted! (change the getEmails(..) function for that)
-                    for(var i=0;i<dist_list.length;i++){
+                    /*for(var i=0;i<dist_list.length;i++){
                         utils.sendMessage(
                             dist_list[i],                //To
                             title,                      //Title of email
                             email_body                 //Message Body
                         );
-                    }
-                    /*utils.sendMessage(
+                    }*/
+                    utils.sendMessage(
                         "ever3stmomo@gmail.com",                //To
                         title,                      //Title of email
                         email_body                 //Message Body
-                    );*/
+                    );
                     //console.log("****THIS IS THE DISTRO: \n" + dist_list);
                     //console.log("****THIS IS THE PREDICTION TABLE: \n" + email_body)
 
@@ -363,22 +401,26 @@ create HTML table of predictions
  */
 var buildPredictionTable = function (json) {
     var tr;
-    var table = "<table>";
+    var HTMLTable = "<table>";
+
+    HTMLTable += "<tr bgcolor='#87cefa'><th>Player</th><th>Predicted Team</th></tr>";
+
     for(var i=0;i<json.length; i++){
-        tr = '<tr/>';
+        tr = '<tr>';
         tr += "<td>" + json[i].name + "</td>";
         tr += "<td>" + json[i].PredictedTeam + "</td>";
-        table += tr;
+        tr += "</tr>";
+        HTMLTable += tr;
     }
-    table += "</table>";
+    HTMLTable += "</table>";
 
-    return table;
+    return HTMLTable;
 }
 
-var createPredictionEmailBody = function(match_date, prediction_table) {
+var createPredictionEmailBody = function(next_match_date, prediction_table) {
     var email_body = "<html>";
 
-    var email_header_line = "<h1>Here are the predictions for the next match: </h1>";
+    var email_header_line = "<h2>Predictions for the next match at " + next_match_date + ": </h2>";
 
     email_body += email_header_line;
     email_body += prediction_table;
@@ -392,18 +434,12 @@ var createPredictionEmailBody = function(match_date, prediction_table) {
     return email_body;
 }
 
+/* Runs query to find the list of the match that was just locked (the immediate next match coming up)*/
 var getPredictionList = function(){
-
-            var get_predictions_query = "SELECT u.name, u.email, m.MatchDate, (SELECT Name FROM teams WHERE teamID = p.predictedTeamID) As PredictedTeam FROM prediction p, users u, teams t, `match` m WHERE p.playerID = u.userID AND p.matchID IN (SELECT matchID FROM `match` WHERE isActive =1) AND p.matchID = m.matchID AND t.teamID IN (m.Team1ID, m.Team2ID, 50) AND p.predictedTeamID = t.teamID";
-
+            var get_predictions_query = "SELECT u.name, u.email, m.MatchDate, (SELECT Name FROM teams WHERE teamID = p.predictedTeamID) As PredictedTeam FROM prediction p, users u, teams t, `match` m WHERE p.playerID = u.userID AND p.matchID IN (SELECT * FROM (SELECT matchID FROM `match` WHERE isActive =1 AND isLocked = 1 ORDER BY matchID DESC LIMIT 1) AS mID) AND p.matchID = m.matchID AND t.teamID IN (m.Team1ID, m.Team2ID, 50) AND p.predictedTeamID = t.teamID";
             //console.log(get_predictions_query);
             return sqlConn.query(get_predictions_query, {type: sqlConn.QueryTypes.SELECT});
-            //utils.logMe(pred_query_promise);
-            //return pred_query_promise;
-            /*,
-             ;*/
-
-}
+};
 
 /*
 Return array of email addresses from prediction list object

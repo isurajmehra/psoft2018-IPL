@@ -179,12 +179,19 @@ app.post("/api/lockNextMatch",function (req, res) {
                     var dist_list = getEmails(pred_list);
 
                     //TODO: foreach the dist_list and send email to everyone in it
-                    // POSSIBLE_BUG:: distro needs to be ALL players, not just the ones who predicted!
-                    utils.sendMessage(
+                    // POSSIBLE_BUG:: distro needs to be ALL players, not just the ones who predicted! (change the getEmails(..) function for that)
+                    for(var i=0;i<dist_list.length;i++){
+                        utils.sendMessage(
+                            dist_list[i],                //To
+                            title,                      //Title of email
+                            email_body                 //Message Body
+                        );
+                    }
+                    /*utils.sendMessage(
                         "ever3stmomo@gmail.com",                //To
                         title,                      //Title of email
                         email_body                 //Message Body
-                    );
+                    );*/
                     //console.log("****THIS IS THE DISTRO: \n" + dist_list);
                     //console.log("****THIS IS THE PREDICTION TABLE: \n" + email_body)
 

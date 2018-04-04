@@ -126,12 +126,11 @@ app.use(cors());            //cross browser origin support
 app.use(router);
 
 /*========================== SCHEDULER =====================================*/
-//function to check and lock matches; runs two times, as according to IPL 2017 times (1020 hrs and 1420 hrs UTC/server times are in EST)
-var lockFirstMatchIPL2017 = schedule.scheduleJob('30 5 * * *',function(){      //5:30 am EST
-
+//function to check and lock matches; runs two times, as according to IPL 2018 times (2000 hrs and 1600 hrs IST/server times are in EST)
+var lockFirstMatchIPL2018 = schedule.scheduleJob('15 10 * * *',function(){      //15 min prior to 10:30 am EST
     lockMatch(lock_threshold)
         .then(function () {
-            var lock_done_msg = "*** Upcoming match has been locked successfully at 6:25 AM EDST by psoft scheduler.";
+            var lock_done_msg = "*** Upcoming match has been locked successfully at 10:15 AM EDST by psoft scheduler.";
             utils.logMe(lock_done_msg);
 
             getPredictionList()
@@ -146,11 +145,11 @@ var lockFirstMatchIPL2017 = schedule.scheduleJob('30 5 * * *',function(){      /
         });
 });
 
-var lockSecondMatchIPL2017 = schedule.scheduleJob('30 9 * * *',function(){     //9:30 am EST
+var lockSecondMatchIPL2018 = schedule.scheduleJob('15 6 * * *',function(){     //15 min prior to 6:30 am EST
 
     lockMatch(lock_threshold)
         .then(function () {
-            var lock_done_msg = "*** Upcoming match has been locked successfully at 10:25 AM EDST by psoft scheduler.";
+            var lock_done_msg = "*** Upcoming match has been locked successfully at 6:15 AM EDST by psoft scheduler.";
             utils.logMe(lock_done_msg);
             getPredictionList()
                 .then(function (pred_list) {
@@ -437,5 +436,6 @@ var getEmailList = function () {
 
 app.listen(port);
 utils.logMe("psoftr00t service started on port " + port);
-utils.logMe("Started scheduler for auto-locking 5:30 AM CST match " + lockFirstMatchIPL2017.name);
-utils.logMe("Started scheduler for auto-locking 9:30 AM CST match " + lockSecondMatchIPL2017.name);
+utils.logMe("Started scheduler for auto-locking 10:30 AM EDST match " + lockFirstMatchIPL2018.name);
+lockFirstMatchIPL2018.name = "LockFirstMatch";
+utils.logMe("Started scheduler for auto-locking 6:30 AM EDST match " + lockSecondMatchIPL2018.name);

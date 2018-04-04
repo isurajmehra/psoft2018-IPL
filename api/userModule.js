@@ -1,6 +1,7 @@
 // (C)grjoshi 5/29/2016
 // userModule.js - User related functions
 var utils = require("./PS2Utils.js");
+var config = require("../config/psoft_config");
 var exports = module.exports = {};
 
 //API function implementation
@@ -55,11 +56,11 @@ exports.logIn = function(req,res,userModel) {
 };
 
 exports.addUser = function(req,res,userModel){
-    /////////uncomment the following after registration period expires
-    utils.logMe("Registration period has expired. Unable to register account for " + req.body.email);
-    res.json({ success: false, message: "Registration period has ended. New accounts will not be added!" });
-    return;
-    /////////////////////////////////////////
+    if(!config.allow_registration){
+        utils.logMe("Registration period has expired. Unable to register account for " + req.body.email);
+        res.json({ success: false, message: "Registration period has ended. New accounts will not be added!" });
+        return;
+    }
 
     //Password hashing has been taken care of on the client side
     if (req.body.name == "" || req.body.email == "" || req.body.password == "") {

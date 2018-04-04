@@ -17,7 +17,7 @@ grjoshi 5/30/2016
         
         $scope.registerUser = function () {
             
-            return;  //uncomment after registraion period expires
+            //return;  //uncomment after registraion period expires
 
             if ($scope.user.name == "" || $scope.user.email == "" || $scope.user.password == "") {
                 console.error("Blank values cannot be submitted!");

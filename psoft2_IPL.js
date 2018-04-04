@@ -1,8 +1,8 @@
 /*
  (C)grjoshi
  Started: 3/30/2016
- Last edit: 4/17/2017
- psoft2.js - Main server code for PredictSoft v2
+ Last edit: 4/3/2018
+ psoft3.js - Main server code for PredictSoft v3 (IPL)
  Handles database operations and APIs for reading/writing data
  Forked off of NoFApp v1 built for Twenty 20 Cricket 2016
  */
@@ -532,11 +532,11 @@ app.post("/api/login", function (req, res) {
 //add new user API
 app.post("/api/adduser", function (req, res) {
     
-    //uncomment the following after registration period expires
-    utils.logMe("Registration period has expired. Unable to register account for " + req.body.email);
-    res.json({ success: false, message: "Registration period has ended. New accounts will not be added!" });
-    return;
-    /////////////////////////////////////////    
+    if(!app_config.allow_registration){
+        utils.logMe("Registration period has expired. Unable to register account for " + req.body.email);
+        res.json({ success: false, message: "Registration period has ended. New accounts will not be added!" });
+        return;
+    }    
     
     //Note: Password hashing has been taken care of on the client side
     if (req.body.name == "" || req.body.email == "" || req.body.password == "") {

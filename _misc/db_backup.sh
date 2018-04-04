@@ -7,7 +7,7 @@
 SQLFILE=psoft2017_PRODUCTION_BACKUP_$(date +"%m-%d-%Y_%H%Mhrs.sql");
 #echo $SQLFILE;
 #create SQL dump of current DB
-mysqldump -h localhost -upsoft2017 -p'J<3mBS0q' --opt psoft2017_PRODUCTION > /home/psoft2017/predictsoft_IPL2017/db_bkps/$SQLFILE
+mysqldump -h localhost -upsoft2017 -p'*******' --opt psoft2017_PRODUCTION > /home/psoft2017/predictsoft_IPL2017/db_bkps/$SQLFILE
 
 #upload it to google drive (make sure to init gdrive by doing "gdrive about" and registering any tokens it asks beforehand)
 gdrive upload /home/psoft2017/predictsoft_IPL2017/db_bkps/$SQLFILE

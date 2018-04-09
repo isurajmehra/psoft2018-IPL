@@ -39,7 +39,7 @@ module.exports.sendConfirmation = function(matchdate,confirmSnippet,nameOfPlayer
 
     //console.log("Matchdate value is "+matchdate+", moment is "+moment(matchdate).format("MMMM Do YYYY, h:mm a"));
 
-    var title = "Predictsoft v2.10 - Thank you for submitting your prediction for " + moment(matchdate).format("MMMM Do YYYY, h:mm a");
+    var title = "Predictsoft v3.0(IPL) - Thank you for submitting your prediction for " + moment(matchdate).format("MMMM Do YYYY, h:mm a");
     var messageBody = "<h1>Thank you " + nameOfPlayer + "!</h1><h2>We have received your submission for " + moment(matchdate).format("MMMM Do YYYY, h:mm a") + ".</h2>"
         + "<p>&nbsp;</p>"+ confirmSnippet +"<p>&nbsp;</p>"
         + "<p><strong>Good luck!</strong></p>"

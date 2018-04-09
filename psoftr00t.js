@@ -127,7 +127,8 @@ app.use(router);
 
 /*========================== SCHEDULER =====================================*/
 //function to check and lock matches; runs two times, as according to IPL 2018 times (2000 hrs and 1600 hrs IST/server times are in EST)
-var lockFirstMatchIPL2018 = schedule.scheduleJob('15 10 * * *',function(){      //15 min prior to 10:30 am EST
+//also remember to change value for 'match_lock_threshold_in_minutes' in config file
+var lockFirstMatchIPL2018 = schedule.scheduleJob('30 9 * * *',function(){      //1 hour prior to 10:30 am EST
     lockMatch(lock_threshold)
         .then(function () {
             var lock_done_msg = "*** Upcoming match has been locked successfully at 10:15 AM EDST by psoft scheduler.";
@@ -140,16 +141,16 @@ var lockFirstMatchIPL2018 = schedule.scheduleJob('15 10 * * *',function(){      
                 })
         })
         .error(function(err){
-            utils.logMe("Error trying to lock match by schedule at 6:25 AM EDST. Description: ",err);
+            utils.logMe("Error trying to lock match by schedule at 9:30 AM EDST. Description: ",err);
             return;
         });
 });
 
-var lockSecondMatchIPL2018 = schedule.scheduleJob('15 6 * * *',function(){     //15 min prior to 6:30 am EST
+var lockSecondMatchIPL2018 = schedule.scheduleJob('30 5 * * *',function(){     //15 min prior to 6:30 am EST
 
     lockMatch(lock_threshold)
         .then(function () {
-            var lock_done_msg = "*** Upcoming match has been locked successfully at 6:15 AM EDST by psoft scheduler.";
+            var lock_done_msg = "*** Upcoming match has been locked successfully at 5:30 AM EDST by psoft scheduler.";
             utils.logMe(lock_done_msg);
             getPredictionList()
                 .then(function (pred_list) {
@@ -158,7 +159,7 @@ var lockSecondMatchIPL2018 = schedule.scheduleJob('15 6 * * *',function(){     /
                 })
         })
         .error(function(err){
-            utils.logMe("Error trying to lock match at 10:25 AM EDST. Description: ",err);
+            utils.logMe("Error trying to lock match at 5:30 AM EDST. Description: ",err);
             return;
         });
 });

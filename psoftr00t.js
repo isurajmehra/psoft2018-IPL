@@ -280,6 +280,7 @@ app.post("/api/r00tSendAdminEmail", function (req, res) {
     utils.sendConfirmation(new Date(), "You have chosen England as your team", "Khal Drogo", 'grv2k6@gmail.com');
 
 
+    /*
     var bodyText = req.body.message;
 
 
@@ -288,7 +289,7 @@ app.post("/api/r00tSendAdminEmail", function (req, res) {
         title,                      //Title of email
         messageBody                 //Message Body
     );
-
+   */
 
     res.json({message: 'OK'});
 })

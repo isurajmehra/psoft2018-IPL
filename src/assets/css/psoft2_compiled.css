@@ -28,6 +28,11 @@ body {
     color:#edfaf9  !important;       /* color of logo text*/
 }
 
+.navbar-link {
+    position: relative;
+    z-index: 1;
+}
+
 .navbar-default {
   background-color:#1f1f8a;
   background-image: none;

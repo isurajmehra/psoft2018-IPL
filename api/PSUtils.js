@@ -10,7 +10,7 @@ var emailConfig = "";
 try {
     emailConfig = require('../config/smtpconfig.js');          //application config
 }
-catch(e){
+catch (e) {
     throw e;
 }
 
@@ -19,29 +19,27 @@ module.exports.logMe = function (message) {
     console.log("[" + getNow() + "] " + message);
 };
 
-module.exports.getToday = function(){
-   console.log(moment().format());
+module.exports.getToday = function () {
+    console.log(moment().format());
 };
 
 
-module.exports.getTomorrowsDate = function(){
-    return moment().add(1,'days').calendar();
+module.exports.getTomorrowsDate = function () {
+    return moment().add(1, 'days').calendar();
 };
 
-module.exports.getNow = function(){
+module.exports.getNow = function () {
     return getNow();
 }
 
-
-
 //send confirmation of prediction
-module.exports.sendConfirmation = function(matchdate,confirmSnippet,nameOfPlayer,playerEmail){
+module.exports.sendConfirmation = function (matchdate, confirmSnippet, nameOfPlayer, playerEmail) {
 
     //console.log("Matchdate value is "+matchdate+", moment is "+moment(matchdate).format("MMMM Do YYYY, h:mm a"));
 
     var title = "Predictsoft v3.0(IPL) - Thank you for submitting your prediction for " + moment(matchdate).format("MMMM Do YYYY, h:mm a");
     var messageBody = "<h1>Thank you " + nameOfPlayer + "!</h1><h2>We have received your submission for " + moment(matchdate).format("MMMM Do YYYY, h:mm a") + ".</h2>"
-        + "<p>&nbsp;</p>"+ confirmSnippet +"<p>&nbsp;</p>"
+        + "<p>&nbsp;</p>" + confirmSnippet + "<p>&nbsp;</p>"
         + "<p><strong>Good luck!</strong></p>"
         + "<p><strong>The Predictsoft team</strong></p>"
         + "<p>&nbsp;</p><p><strong>&nbsp;</strong></p>";
@@ -55,11 +53,11 @@ module.exports.sendConfirmation = function(matchdate,confirmSnippet,nameOfPlayer
 };
 
 //TODO:: run this as a separate node instance to be triggered by cron?
-module.exports.sendAlerts = function(to, title,message){
+module.exports.sendAlerts = function (to, title, message) {
     //....
 };
 
-module.exports.sendMessage = function(to, title,message){
+module.exports.sendMessage = function (to, title, message) {
     sendEmail(
         to,                        //To
         title,                     //Title of email
@@ -67,11 +65,21 @@ module.exports.sendMessage = function(to, title,message){
     );
 };
 
-//private email method
-var sendEmail = function(to,title,mbody){
 
-    if((!emailConfig.enabled))
+module.exports.ping = function (req, res) {
     {
+        res.status(200).json({
+            status: 'Ping! psoft_IPL is up and running'           
+        });
+        res.end();
+        return;
+    }
+}
+
+//private email method
+var sendEmail = function (to, title, mbody) {
+
+    if ((!emailConfig.enabled)) {
         console.log("###NOT SENDING EMAILS BASED ON CONFIG FILE SETTING");
         return;
     }
@@ -105,17 +113,17 @@ var sendEmail = function(to,title,mbody){
         html: mbody         //HTML text
     };
 
-   // console.log("From",from,"TO:",to,"EMAIL TITLE:",title,"Message: ",mbody);
+    // console.log("From",from,"TO:",to,"EMAIL TITLE:",title,"Message: ",mbody);
 
-    transporter.sendMail(mailOptions, function (error,info){
-        if(error){
+    transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
             console.log(error);                                                            //does this go (in the future) into a separate verbose.log file?
             return;
         }
-        console.log("["+getNow()+"] Email sent to" , to , "successfully. Info.response =",info.response);       //does this go (in the future) into a separate verbose.log file?
+        console.log("[" + getNow() + "] Email sent to", to, "successfully. Info.response =", info.response);       //does this go (in the future) into a separate verbose.log file?
     });
 };
 
-var getNow=function(){
+var getNow = function () {
     return moment().format('MMM DD YYYY HH:mm:ss');
 }

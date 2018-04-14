@@ -1,6 +1,6 @@
 // (C)grjoshi 5/29/2016
 // gameModule.js - Match related functions
-var utils = require("./PS2Utils.js");
+var utils = require("./PSUtils.js");
 var exports = module.exports;
 
 //API function implementation

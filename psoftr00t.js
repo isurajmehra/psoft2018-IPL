@@ -25,7 +25,7 @@ var app_config = "";
 var db_config = "";
 
 try {
-    utils = require("./api/PS2Utils.js");
+    utils = require("./api/PSUtils.js");
     app_config = require('./config/psoft_config.js');          //application config
     db_config = require('./config/dbconfig.js');                 //database config
 }

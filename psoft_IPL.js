@@ -2,7 +2,7 @@
  (C)grjoshi
  Started: 3/30/2016
  Last edit: 4/3/2018
- psoft3.js - Main server code for PredictSoft v3 (IPL)
+ psoft_IPL.js - Main server code for PredictSoft v3 (IPL)
  Handles database operations and APIs for reading/writing data
  Forked off of NoFApp v1 built for Twenty 20 Cricket 2016
  */
@@ -23,7 +23,7 @@ var app_config = "";
 var db_config = "";
 
 try {
-    utils = require("./api/PS2Utils.js");
+    utils = require("./api/PSUtils.js");
     app_config = require('./config/psoft_config.js');          //application config
     db_config = require('./config/dbconfig.js');                 //database config
 }
@@ -42,6 +42,7 @@ var app_name = app_config.app_name;
 var app_version = app_config.app_version;
 
 var app = express();
+const app_routes = require('./api/routes');
 
 /*==========================DB definitions================================*/
 
@@ -873,6 +874,10 @@ app.post("/api/submitPrediction", function (req, res) {
         })
 
 });
+
+
+/* admin related functions */
+app.use('/api/admin', app_routes);                                       // Use router for all requests that start with /api
 
 /*=====================================Init app=====================================*/
 

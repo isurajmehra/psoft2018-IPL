@@ -15,7 +15,7 @@ var favicon = require('serve-favicon');
 var cors = require('cors');
 
 //load utility module
-var utils =  "";
+var utils = "";
 
 /*==========================Load config===================================*/
 
@@ -27,8 +27,8 @@ try {
     app_config = require('./config/psoft_config.js');          //application config
     db_config = require('./config/dbconfig.js');                 //database config
 }
-catch(e){
-    if(utils == "") {
+catch (e) {
+    if (utils == "") {
         console.log(e);
     }
     else {
@@ -102,7 +102,7 @@ app.get("/", function (req, res) {
 app.get("/api/nextmatch", function (req, res) {
     var resObj = {
         count: 0,
-        rem_predictions:0,
+        rem_predictions: 0,
         matchData: [],
         message: "",
         success: false
@@ -148,7 +148,7 @@ app.get("/api/nextmatch", function (req, res) {
             //also get remaining number of predictions
             var getRemPredsQRY = "SELECT ((SELECT COUNT(*) FROM users) - COUNT(*)) as rem_preds from prediction p, `match` m WHERE m.matchID = p.matchID AND m.isActive = 1";
             sqlConn.query(getRemPredsQRY,
-                {type: sqlConn.QueryTypes.SELECT})
+                { type: sqlConn.QueryTypes.SELECT })
                 .then(function (remPredictions) {
                     //utils.logMe(JSON.stringify(remPredictions,true));
                     resObj.rem_predictions = remPredictions[0].rem_preds;
@@ -180,7 +180,7 @@ app.get("/api/getPredictions", function (req, res) {
     var tokenID = req.query.token;
 
     //check if match is locked, in which case only return current user's prediction
-    Match.find({where: {isActive: 1}})
+    Match.find({ where: { isActive: 1 } })
         .then(function (active_rows) {
             if (active_rows == null) {
                 return;
@@ -204,7 +204,7 @@ app.get("/api/getPredictions", function (req, res) {
                 "u2.auth_key <> '" + tokenID + "' AND p2.predictedTeamID = t2.teamID";
 
             sqlConn.query(listPredQRY,
-                {type: sqlConn.QueryTypes.SELECT})
+                { type: sqlConn.QueryTypes.SELECT })
                 .then(function (predictions) {
                     var team = '';
                     for (var n = 0; n < predictions.length; n++) {
@@ -223,7 +223,7 @@ app.get("/api/getPredictions", function (req, res) {
                     // note the "-1" in query, which has been added to remove [admin] from player list
                     var getRemPredsQRY = "SELECT (((SELECT COUNT(*) FROM users) - 1) - COUNT(*)) as rem_preds from prediction p, `match` m WHERE m.matchID = p.matchID AND m.isActive = 1";
                     sqlConn.query(getRemPredsQRY,
-                        {type: sqlConn.QueryTypes.SELECT})
+                        { type: sqlConn.QueryTypes.SELECT })
                         .then(function (remPredictions) {
                             //console.log(JSON.stringify(remPredictions,true));
                             resObj.rem_predictions = remPredictions[0].rem_preds;
@@ -249,34 +249,34 @@ app.get("/api/getScores", function (req, res) {
         message: "",
         success: false
     };
-    
+
     sqlConn.query(
         "SELECT u.name, u.points FROM users u ORDER BY points DESC",
-      { type: sqlConn.QueryTypes.SELECT })
-      .then(function (scores) {
-        
-        resObj.success = true;
-        
-        for (var n = 0; n < scores.length; n++) {
-            //utils.logMe(JSON.stringify(scores));
-            resObj.scoreData.push({
-                Name: scores[n].name,
-                Points: scores[n].points
-            });
-        }
-        
-        res.json(resObj);
-        res.end();
-        return;
-    })
-      .catch(function (err) {
-        utils.logMe("Error trying to fill in score data. Details:\n" + err);
-        //get player prediction for upcoming match
-        resObj.success = false;
-        resObj.message = err;
-        res.json(resObj);
-        return;
-    })
+        { type: sqlConn.QueryTypes.SELECT })
+        .then(function (scores) {
+
+            resObj.success = true;
+
+            for (var n = 0; n < scores.length; n++) {
+                //utils.logMe(JSON.stringify(scores));
+                resObj.scoreData.push({
+                    Name: scores[n].name,
+                    Points: scores[n].points
+                });
+            }
+
+            res.json(resObj);
+            res.end();
+            return;
+        })
+        .catch(function (err) {
+            utils.logMe("Error trying to fill in score data. Details:\n" + err);
+            //get player prediction for upcoming match
+            resObj.success = false;
+            resObj.message = err;
+            res.json(resObj);
+            return;
+        })
 })
 
 //check if user has already predicted
@@ -285,31 +285,31 @@ app.get("/api/checkIfPredicted", function (req, res) {
         message: "",
         hasPredicted: false
     };
-    
+
     var tokenID = req.query.token;
-    
+
     sqlConn.query(
         "SELECT * FROM prediction p WHERE playerID = (SELECT userID FROM users WHERE auth_key = '" + tokenID + "') AND matchID IN (SELECT matchID FROM `match` WHERE isActive = 1)",
-    { type: sqlConn.QueryTypes.SELECT })
-    .then(function (predictionCount) {
-        if (predictionCount.length > 0) {
+        { type: sqlConn.QueryTypes.SELECT })
+        .then(function (predictionCount) {
+            if (predictionCount.length > 0) {
+                resObj.hasPredicted = true;
+            }
+            else {
+                resObj.hasPredicted = false;
+            }
+
+            res.json(resObj);
+            res.end();
+            return;
+        })
+        .catch(function (err) {
+            utils.logMe(err);
+            resObj.message = err;
             resObj.hasPredicted = true;
-        }
-        else {
-            resObj.hasPredicted = false;
-        }
-        
-        res.json(resObj);
-        res.end();
-        return;
-    })
-    .catch(function (err) {
-        utils.logMe(err);
-        resObj.message = err;
-        resObj.hasPredicted = true;
-        res.json(resObj);
-        return;
-    })
+            res.json(resObj);
+            return;
+        })
 })
 
 //get user's game history
@@ -338,7 +338,7 @@ app.get("/api/getHistory", function (req, res) {
         "m.matchID = p.matchID AND " +
         "m.isActive=0";
 
-    sqlConn.query(historyQuery, {type: sqlConn.QueryTypes.SELECT})
+    sqlConn.query(historyQuery, { type: sqlConn.QueryTypes.SELECT })
         .then(function (matches) {
 
             //fill response object and return
@@ -404,7 +404,7 @@ app.get("/api/getHistoryByID", function (req, res) {
         "m.matchID = p.matchID AND " +
         "m.isActive=0 AND m.isLocked=1 AND m.isHidden=0";
 
-    sqlConn.query(historyIDQuery, {type: sqlConn.QueryTypes.SELECT})
+    sqlConn.query(historyIDQuery, { type: sqlConn.QueryTypes.SELECT })
         .then(function (matches) {
             //fill response object and return
             resObj.success = true;
@@ -449,23 +449,23 @@ app.get("/api/getScore", function (req, res) {
         message: "",
         success: false
     };
-    
+
     var playerToken = req.query.token;
 
     sqlConn.query(
-        "SELECT points FROM users WHERE auth_key = '"+playerToken+"'",
-      { type: sqlConn.QueryTypes.SELECT })
-      .then(function (usrScore) {
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify({ score: usrScore[0].points }));
-    })
-      .catch(function (err) {
-        utils.logMe("Error trying to get user score data for token: "+req.query.token+". Details:\n" + err);
-        //get player prediction for upcoming match
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify({ score: -1 }));
-        return;
-    })
+        "SELECT points FROM users WHERE auth_key = '" + playerToken + "'",
+        { type: sqlConn.QueryTypes.SELECT })
+        .then(function (usrScore) {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({ score: usrScore[0].points }));
+        })
+        .catch(function (err) {
+            utils.logMe("Error trying to get user score data for token: " + req.query.token + ". Details:\n" + err);
+            //get player prediction for upcoming match
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({ score: -1 }));
+            return;
+        })
 });
 
 //get points for user
@@ -480,13 +480,13 @@ app.get("/api/getLeaderboardScores", function (req, res) {
 
 //try to login and get user info API
 app.post("/api/login", function (req, res) {
-    
+
     var resObj = {
         usrData: {},
         message: "",
         success: false
     };
-    
+
     if (req.body.email == "" || req.body.password == "") {
         resObj.message = "Invalid email/password";
         resObj.success = false;
@@ -497,59 +497,59 @@ app.post("/api/login", function (req, res) {
             password: req.body.password
         }
     })
-  .then(function (usrObj) {
-        
-        if (usrObj == null) {
-            throw "User not found. Please check username/password and try again";
-        }
-        
-        //populate user data
-        resObj.success = true;
-        resObj.usrData = {
-            userID: usrObj.userID,
-            email: usrObj.email,
-            user: usrObj.name,
-            token: usrObj.auth_key,
-            points: usrObj.points
-        };
-        
-        res.json(resObj);
-        res.end();
-        return;
-    })
-  .catch(function (err) {
-        //user find failed
-        utils.logMe("Error trying to fetch user with email " + req.body.email + ". Details: " + err);
-        resObj.success = false;
-        resObj.message = err;
-        
-        res.json(resObj);
-        res.end();
-        return;
-    });
+        .then(function (usrObj) {
+
+            if (usrObj == null) {
+                throw "User not found. Please check username/password and try again";
+            }
+
+            //populate user data
+            resObj.success = true;
+            resObj.usrData = {
+                userID: usrObj.userID,
+                email: usrObj.email,
+                user: usrObj.name,
+                token: usrObj.auth_key,
+                points: usrObj.points
+            };
+
+            res.json(resObj);
+            res.end();
+            return;
+        })
+        .catch(function (err) {
+            //user find failed
+            utils.logMe("Error trying to fetch user with email " + req.body.email + ". Details: " + err);
+            resObj.success = false;
+            resObj.message = err;
+
+            res.json(resObj);
+            res.end();
+            return;
+        });
 });
 
 //add new user API
 app.post("/api/adduser", function (req, res) {
-    
-    if(!app_config.allow_registration){
+
+    if (!app_config.allow_registration) {
         utils.logMe("Registration period has expired. Unable to register account for " + req.body.email);
         res.json({ success: false, message: "Registration period has ended. New accounts will not be added!" });
         return;
-    }    
-    
+    }
+
     //Note: Password hashing has been taken care of on the client side
     if (req.body.name == "" || req.body.email == "" || req.body.password == "") {
         utils.logMe("Blank values trying to add user(email given: " + req.body.email + "). Not registering!");
         return;
     }
-    
+
     var resObj = {
         message: "",
         success: false
     };
-    
-    
+
+
     //check if email ID already exists
     Users.find({
         where: {
@@ -565,32 +565,32 @@ app.post("/api/adduser", function (req, res) {
                 auth_key: req.body.token,
                 points: 0
             });
-            
+
             user.save()
-            .then(function () {
-                resObj.success = true;
-                res.json(resObj);
-                return;
-            })
-            .catch(function (err) {
-                utils.logMe("Error adding user {" + req.body.name + "/" + req.body.email + "/" + "}. Details: \n" + err + ")");
-                resObj.success = false;
-                resObj.message = err;
-                res.json(resObj);
-                return;
-            });
+                .then(function () {
+                    resObj.success = true;
+                    res.json(resObj);
+                    return;
+                })
+                .catch(function (err) {
+                    utils.logMe("Error adding user {" + req.body.name + "/" + req.body.email + "/" + "}. Details: \n" + err + ")");
+                    resObj.success = false;
+                    resObj.message = err;
+                    res.json(resObj);
+                    return;
+                });
         }
         else {
             throw "That email address has already been registered.";
         }
     })
-    .catch(function (err) {
-        utils.logMe("[" + req.body.email + "]" + err);
-        resObj.success = false;
-        resObj.message = err;
-        res.json(resObj);
-        return;
-    });
+        .catch(function (err) {
+            utils.logMe("[" + req.body.email + "]" + err);
+            resObj.success = false;
+            resObj.message = err;
+            res.json(resObj);
+            return;
+        });
 });
 
 //create/update prediction for user
@@ -603,7 +603,7 @@ app.post("/api/submitPrediction", function (req, res) {
 
     //utils.logMe("predObj::" + JSON.stringify(req.body.predObj));
     if (!req.body || !req.body.predObj) {
-        res.json({Message: "Invalid request, aborting..."});
+        res.json({ Message: "Invalid request, aborting..." });
         return;
     }
 
@@ -625,7 +625,7 @@ app.post("/api/submitPrediction", function (req, res) {
 
     sqlConn.query(
         "SELECT userID, name, email from users WHERE auth_key = '" + req.body.token + "'",
-        {type: sqlConn.QueryTypes.SELECT})
+        { type: sqlConn.QueryTypes.SELECT })
         .then(function (user_row) {
 
             userID = user_row[0].userID;
@@ -637,7 +637,7 @@ app.post("/api/submitPrediction", function (req, res) {
             playerFullName = user_row[0].name;
             playerEmail = user_row[0].email;
 
-            return Match.find({where: {matchID: match_id, isLocked: 0}})
+            return Match.find({ where: { matchID: match_id, isLocked: 0 } })
                 .then(function (active_rows) {
 
                     //console.log("returning active rows for match:: %o",active_rows);
@@ -655,8 +655,8 @@ app.post("/api/submitPrediction", function (req, res) {
                     //not locked, so prediction change is allowed
                     return Prediction
                         .findOrCreate({
-                            where: {playerID: userID, matchID: match_id},
-                            defaults: {predictedTeamID: team_id}
+                            where: { playerID: userID, matchID: match_id },
+                            defaults: { predictedTeamID: team_id }
                         })
                         .spread(function (prediction, created) {
                             if (!created) {
@@ -666,7 +666,7 @@ app.post("/api/submitPrediction", function (req, res) {
                                 //prediction exists; update it
                                 sqlConn.query(
                                     "UPDATE prediction SET predictedTeamID=" + team_id + " WHERE playerID=" + userID + " AND matchID=" + match_id,
-                                    {type: sqlConn.QueryTypes.UPDATE})
+                                    { type: sqlConn.QueryTypes.UPDATE })
                                     .then(function (updated) {
                                         utils.logMe("Updated for user " + userID + " for matchID: " + match_id + "; new team: " + team_id);
                                         //console.log(JSON.stringify(updated));
@@ -703,7 +703,7 @@ app.post("/api/submitPrediction", function (req, res) {
                 selectionList = selectionList + "<li><strong>" + req.body.predObj[1].teamName + "</strong></li>";
                 ;              //add team to selection list
 
-                Match.find({where: {matchID: match_id2, isLocked: 0}})
+                Match.find({ where: { matchID: match_id2, isLocked: 0 } })
                     .then(function (active_rows) {
                         //check if this match has been locked
                         if (active_rows == null) {
@@ -716,8 +716,8 @@ app.post("/api/submitPrediction", function (req, res) {
                         //not locked, so prediction change is allowed
                         return Prediction
                             .findOrCreate({
-                                where: {playerID: userID, matchID: match_id2},
-                                defaults: {predictedTeamID: team_id2}
+                                where: { playerID: userID, matchID: match_id2 },
+                                defaults: { predictedTeamID: team_id2 }
                             })
                             .spread(function (prediction2, created) {
                                 if (!created) {
@@ -727,7 +727,7 @@ app.post("/api/submitPrediction", function (req, res) {
                                     //prediction exists; update it
                                     sqlConn.query(
                                         "UPDATE prediction SET predictedTeamID=" + team_id2 + " WHERE playerID=" + userID + " AND matchID=" + match_id2,
-                                        {type: sqlConn.QueryTypes.UPDATE})
+                                        { type: sqlConn.QueryTypes.UPDATE })
                                         .then(function (updated2) {
                                             utils.logMe("Updated for user " + userID + " for matchID: " + match_id2);
                                             resObj.success = true;
@@ -758,7 +758,7 @@ app.post("/api/submitPrediction", function (req, res) {
                 match_id3 = req.body.predObj[2].matchID;
                 selectionList = selectionList + "<li><strong>" + req.body.predObj[2].teamName + "</strong></li>";              //add team to selection list
 
-                Match.find({where: {matchID: match_id3, isLocked: 0}})
+                Match.find({ where: { matchID: match_id3, isLocked: 0 } })
                     .then(function (active_rows) {
                         //check if this match has been locked
                         if (active_rows == null) {
@@ -771,8 +771,8 @@ app.post("/api/submitPrediction", function (req, res) {
                         //not locked, so prediction change is allowed
                         return Prediction
                             .findOrCreate({
-                                where: {playerID: userID, matchID: match_id3},
-                                defaults: {predictedTeamID: team_id3}
+                                where: { playerID: userID, matchID: match_id3 },
+                                defaults: { predictedTeamID: team_id3 }
                             })
                             .spread(function (prediction3, created) {
                                 if (!created) {
@@ -782,7 +782,7 @@ app.post("/api/submitPrediction", function (req, res) {
                                     //prediction exists; update it
                                     sqlConn.query(
                                         "UPDATE prediction SET predictedTeamID=" + team_id3 + " WHERE playerID=" + userID + " AND matchID=" + match_id3,
-                                        {type: sqlConn.QueryTypes.UPDATE})
+                                        { type: sqlConn.QueryTypes.UPDATE })
                                         .then(function (updated3) {
                                             utils.logMe("Updated for user " + userID + " for matchID: " + match_id3);
                                             resObj.success = true;
@@ -813,7 +813,7 @@ app.post("/api/submitPrediction", function (req, res) {
                 match_id4 = req.body.predObj[3].matchID;
                 selectionList = selectionList + "<li><strong>" + req.body.predObj[3].teamName + "</strong></li>";              //add team to selection list
 
-                Match.find({where: {matchID: match_id4, isLocked: 0}})
+                Match.find({ where: { matchID: match_id4, isLocked: 0 } })
                     .then(function (active_rows) {
                         //check if this match has been locked
                         if (active_rows == null) {
@@ -826,8 +826,8 @@ app.post("/api/submitPrediction", function (req, res) {
                         //not locked, so prediction change is allowed
                         return Prediction
                             .findOrCreate({
-                                where: {playerID: userID, matchID: match_id4},
-                                defaults: {predictedTeamID: team_id4}
+                                where: { playerID: userID, matchID: match_id4 },
+                                defaults: { predictedTeamID: team_id4 }
                             })
                             .spread(function (prediction4, created) {
                                 if (!created) {
@@ -837,7 +837,7 @@ app.post("/api/submitPrediction", function (req, res) {
                                     //prediction exists; update it
                                     sqlConn.query(
                                         "UPDATE prediction SET predictedTeamID=" + team_id4 + " WHERE playerID=" + userID + " AND matchID=" + match_id4,
-                                        {type: sqlConn.QueryTypes.UPDATE})
+                                        { type: sqlConn.QueryTypes.UPDATE })
                                         .then(function (updated4) {
                                             utils.logMe("Updated for user " + userID + " for matchID: " + match_id4);
                                             resObj.success = true;
@@ -872,6 +872,81 @@ app.post("/api/submitPrediction", function (req, res) {
             return resObj;
         })
 
+});
+
+app.post("/api/admin/update", function (req, res) {
+    //update scores and next day's match
+    var resObj = {
+        message: "",
+        success: false
+    };
+
+    if (!req.body) {
+        resObj.message = "ADMIN_UPDATE_ERROR: IMPROPERLY FORMED POST REQUEST";
+        resObj.success = false;
+        utils.logMe(resObj.message);
+        res.json(resObj);
+        res.end();
+    }
+
+    if (!req.body.matchID || !req.body.winningTeamID || !req.body.token) {
+        resObj.message = "ADMIN_UPDATE_ERROR:: Insufficient number of parameters specified in request";
+        resObj.success = false;
+        res.json(resObj);
+        res.end();
+    }
+
+    var playerToken = req.body.token;
+
+    var getr00t_query = "SELECT name FROM users WHERE auth_key = '" + playerToken + "' AND isr00t = 1";
+    sqlConn.query(
+        getr00t_query,
+        { type: sqlConn.QueryTypes.SELECT })
+        .then(function (adminObject) {
+            if (adminObject.length <= 0) {
+                //could not validate as admin user
+                access_err_message = "ERR_ACCESS_DENIED - User with token " + playerToken + " was not found in the administrator group.";
+                res.status(401).json({success: false, message: access_err_message});
+                res.end();
+                return;
+            }
+            admin_user_name = adminObject[0].name;
+        }).then(function(){
+            utils.logMe("### ADMIN_AUTH:: Logged in as " + admin_user_name);
+            var matchID = req.body.matchID;
+            var winningTeamID = req.body.winningTeamID;
+        
+            var SP_update_query = "CALL update_scores('" + matchID + "','" + winningTeamID + "');";
+        
+            sqlConn.query(SP_update_query)
+                .then(function () {
+        
+                    var success_message = "***  { ADMIN_USER : " + admin_user_name + " } Match scores successfully updated for matchID " + matchID + " [Winning TeamID: " + winningTeamID + "]";
+                    console.log(resObj.message);
+                    
+                    res.status(200).json({success: true, message: success_message});
+                    // Activate next day's match(es)
+                    /* activateNextMatch()
+                        .then(function () {
+                            //all steps so far have been successful!
+                            utils.logMe("*** Activated next day's match");
+                            res.json(resObj);
+                            res.end();
+                        }); */
+                });
+    })
+    .catch(function (err) {
+        ret_message = "Score update error for user token "+ playerToken +". [Details: " + err + " ]";
+        res.status(500).json({success: false, message: ret_message });
+        res.end();
+        return;
+    });
+});
+
+app.get("/api/admin/ping", function (req, res) {
+    res.status(200).json({ success: true, message: "Admin ping successful!" });
+    res.end();
+    return;
 });
 
 /*=====================================Init app=====================================*/

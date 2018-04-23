@@ -874,7 +874,7 @@ app.post("/api/submitPrediction", function (req, res) {
 
 });
 
-app.post("/api/admin/update", function (req, res) {
+app.post("/api/adminUpdateAfterMatch", function (req, res) {
     //update scores and next day's match
     var resObj = {
         message: "",

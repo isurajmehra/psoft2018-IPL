@@ -906,6 +906,7 @@ app.post("/api/adminUpdateAfterMatch", function (req, res) {
             if (adminObject.length <= 0) {
                 //could not validate as admin user
                 access_err_message = "ERR_ACCESS_DENIED - User with token " + playerToken + " was not found in the administrator group.";
+                utils.logMe(access_err_message);
                 res.status(401).json({success: false, message: access_err_message});
                 res.end();
                 return;
@@ -922,7 +923,7 @@ app.post("/api/adminUpdateAfterMatch", function (req, res) {
                 .then(function () {
         
                     var success_message = "***  { ADMIN_USER : " + admin_user_name + " } Match scores successfully updated for matchID " + matchID + " [Winning TeamID: " + winningTeamID + "]";
-                    console.log(resObj.message);
+                    utils.logMe(resObj.message);
                     
                     res.status(200).json({success: true, message: success_message});
                     // Activate next day's match(es)
